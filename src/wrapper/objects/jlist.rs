@@ -6,40 +6,51 @@ use crate::{
     JNIEnv,
 };
 
+use std::marker::PhantomData;
+
 /// Wrapper for JObjects that implement `java/util/List`. Provides methods to get,
 /// add, and remove elements.
 ///
 /// Looks up the class and method ids on creation rather than for every method
 /// call.
-pub struct JList<'a: 'b, 'b> {
-    internal: JObject<'a>,
+pub struct JList<'a, O> {
+    internal: O,
     get: JMethodID,
     add: JMethodID,
     add_idx: JMethodID,
     remove: JMethodID,
     size: JMethodID,
-    env: &'b JNIEnv<'a>,
+    _phantom_local_frame: PhantomData<&'a ()>,
 }
 
-impl<'a: 'b, 'b> ::std::ops::Deref for JList<'a, 'b> {
-    type Target = JObject<'a>;
+impl<'a, O> AsRef<O> for JList<'a, O> {
+    fn as_ref(&self) -> &O {
+        &*self
+    }
+}
+
+impl<'a, O> ::std::ops::Deref for JList<'a, O> {
+    type Target = O;
 
     fn deref(&self) -> &Self::Target {
         &self.internal
     }
 }
 
-impl<'a: 'b, 'b> From<JList<'a, 'b>> for JObject<'a> {
-    fn from(other: JList<'a, 'b>) -> JObject<'a> {
+impl<'a, O> From<JList<'a, O>> for O {
+    fn from(other: JList<O>) -> Self {
         other.internal
     }
 }
 
-impl<'a: 'b, 'b> JList<'a, 'b> {
+impl<'a, O> JList<'a, O>
+where
+    O: AsRef<JObject<'a>>,
+{
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
-    pub fn from_env(env: &'b JNIEnv<'a>, obj: JObject<'a>) -> Result<JList<'a, 'b>> {
+    pub fn from_env(env: &mut JNIEnv, obj: O) -> Result<JList<'a, O>> {
         let class = env.auto_local(env.find_class("java/util/List")?);
 
         let get = env.get_method_id(&class, "get", "(I)Ljava/lang/Object;")?;
@@ -55,17 +66,17 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
             add_idx,
             remove,
             size,
-            env,
+            _phantom_local_frame: PhantomData,
         })
     }
 
     /// Look up the value for a key. Returns `Some` if it's found and `None` if
     /// a null pointer would be returned.
-    pub fn get(&self, idx: jint) -> Result<Option<JObject<'a>>> {
+    pub fn get<'b>(&self, env: &mut JNIEnv<'b>, idx: jint) -> Result<Option<JObject<'b>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
-            self.env.call_method_unchecked(
+            env.call_method_unchecked(
                 self.internal,
                 self.get,
                 ReturnType::Object,
@@ -83,11 +94,11 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     }
 
     /// Append an element to the list
-    pub fn add(&self, value: JObject<'a>) -> Result<()> {
+    pub fn add(&self, env: &mut JNIEnv, value: &JObject) -> Result<()> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
-            self.env.call_method_unchecked(
+            env.call_method_unchecked(
                 self.internal,
                 self.add,
                 ReturnType::Primitive(Primitive::Boolean),
@@ -100,7 +111,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     }
 
     /// Insert an element at a specific index
-    pub fn insert(&self, idx: jint, value: JObject<'a>) -> Result<()> {
+    pub fn insert(&self, env: &mut JNIEnv, idx: jint, value: &JObject) -> Result<()> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -117,7 +128,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     }
 
     /// Remove an element from the list by index
-    pub fn remove(&self, idx: jint) -> Result<Option<JObject<'a>>> {
+    pub fn remove<'b>(&self, env: &mut JNIEnv<'b>, idx: jint) -> Result<Option<JObject<'b>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a int, rather than any other java type.
         let result = unsafe {
@@ -139,7 +150,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     }
 
     /// Get the size of the list
-    pub fn size(&self) -> Result<jint> {
+    pub fn size(&self, env: &mut JNIEnv) -> Result<jint> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         let result = unsafe {
             self.env.call_method_unchecked(
@@ -156,8 +167,8 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     /// Pop the last element from the list
     ///
     /// Note that this calls `size()` to determine the last index.
-    pub fn pop(&self) -> Result<Option<JObject<'a>>> {
-        let size = self.size()?;
+    pub fn pop<'b>(&self, env: &mut JNIEnv<'b>) -> Result<Option<JObject<'b>>> {
+        let size = self.size(env)?;
         if size == 0 {
             return Ok(None);
         }
@@ -184,11 +195,11 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
 
     /// Get key/value iterator for the map. This is done by getting the
     /// `EntrySet` from java and iterating over it.
-    pub fn iter(&self) -> Result<JListIter<'a, 'b, '_>> {
+    pub fn iter<'list>(&'list self, env: &mut JNIEnv) -> Result<JListIter<'list, 'a, O>> {
         Ok(JListIter {
             list: self,
             current: 0,
-            size: self.size()?,
+            size: self.size(env)?,
         })
     }
 }
@@ -197,29 +208,29 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
 ///
 /// TODO: make the iterator implementation for java iterators its own thing
 /// and generic enough to use elsewhere.
-pub struct JListIter<'a: 'b, 'b: 'c, 'c> {
-    list: &'c JList<'a, 'b>,
+pub struct JListIter<'list, 'a, O> {
+    list: &'list JList<'a, O>,
     current: jint,
     size: jint,
 }
 
-impl<'a: 'b, 'b: 'c, 'c> Iterator for JListIter<'a, 'b, 'c> {
-    type Item = JObject<'a>;
-
-    fn next(&mut self) -> Option<Self::Item> {
+impl<'list, 'a, O> JListIter<'list, 'a, O>
+where
+    O: AsRef<JObject<'a>>,
+{
+    pub fn next<'b>(&mut self, env: &mut JNIEnv<'b>) -> Result<Option<JObject<'b>>> {
         if self.current == self.size {
-            return None;
+            return Ok(None);
         }
-        let res = self.list.get(self.current);
-        match res {
-            Ok(elem) => {
-                self.current += 1;
-                elem
-            }
-            Err(_) => {
-                self.current = self.size;
-                None
-            }
-        }
+
+        let res = self.list.get(env, self.current);
+
+        self.current = match &res {
+            Ok(Some(_)) => self.current + 1,
+            Ok(None) => self.current,
+            Err(_) => self.size,
+        };
+
+        res
     }
 }

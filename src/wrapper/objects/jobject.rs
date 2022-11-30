@@ -2,6 +2,9 @@ use std::marker::PhantomData;
 
 use crate::sys::jobject;
 
+#[cfg(doc)]
+use crate::{JNIEnv, objects::GlobalRef};
+
 /// Wrapper around `sys::jobject` that adds a lifetime. This prevents it from
 /// outliving the context in which it was acquired and getting GC'd out from
 /// under us. It matches C's representation of the raw pointer, so it can be
@@ -10,11 +13,36 @@ use crate::sys::jobject;
 ///
 /// Most other types in the `objects` module deref to this, as they do in the C
 /// representation.
+///
+/// The lifetime `'a` represents the local reference frame that this reference
+/// belongs to. See the [`JNIEnv`] documentation for more information about
+/// local reference frames. If `'a` is `'static`, then this reference does not
+/// belong to a local reference frame, that is, it is either null or a
+/// [global reference][GlobalRef].
+///
+/// Local references belong to a single thread and are not safe to share across
+/// threads. This type implements [`Send`] and [`Sync`] if and only if the
+/// lifetime `'a` is `'static`.
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub struct JObject<'a> {
     internal: jobject,
     lifetime: PhantomData<&'a ()>,
+}
+
+unsafe impl Send for JObject<'static> {}
+unsafe impl Sync for JObject<'static> {}
+
+impl<'a> AsRef<JObject<'a>> for JObject<'a> {
+    fn as_ref(&self) -> &JObject<'a> {
+        self
+    }
+}
+
+impl<'a> AsMut<JObject<'a>> for JObject<'a> {
+    fn as_mut(&mut self) -> &mut JObject<'a> {
+        self
+    }
 }
 
 impl<'a> ::std::ops::Deref for JObject<'a> {
@@ -30,7 +58,12 @@ impl<'a> JObject<'a> {
     ///
     /// # Safety
     ///
-    /// Expects a valid pointer or `null`
+    /// `raw` may be a null pointer. If `raw` is not a null pointer, then:
+    ///
+    /// * `raw` must be a valid raw JNI local reference.
+    /// * There must not be any other `JObject` representing the same local reference.
+    /// * The lifetime `'a` must not outlive the local reference frame that the local reference
+    ///   was created in.
     pub unsafe fn from_raw(raw: jobject) -> Self {
         Self {
             internal: raw,
@@ -38,14 +71,22 @@ impl<'a> JObject<'a> {
         }
     }
 
+    /// Returns the raw JNI pointer.
+    pub fn as_raw(&self) -> jobject {
+        self.internal
+    }
+
     /// Unwrap to the internal jni type.
     pub fn into_raw(self) -> jobject {
         self.internal
     }
 
-    /// Creates a new null object
-    pub fn null() -> JObject<'a> {
-        unsafe { Self::from_raw(std::ptr::null_mut() as jobject) }
+    /// Creates a new null reference.
+    ///
+    /// Null references are always valid and do not belong to a local reference frame. Therefore,
+    /// the returned `JObject` always has the `'static` lifetime.
+    pub fn null() -> JObject<'static> {
+        unsafe { JObject::from_raw(std::ptr::null_mut() as jobject) }
     }
 }
 

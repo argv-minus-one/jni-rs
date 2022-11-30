@@ -119,7 +119,7 @@ impl WeakRef {
     /// collected.
     pub fn is_same_object<'a, O>(&self, env: &JNIEnv<'a>, object: O) -> Result<bool>
     where
-        O: Into<JObject<'a>>,
+        O: AsRef<JObject<'a>>,
     {
         env.is_same_object(unsafe { JObject::from_raw(self.as_raw()) }, object)
     }

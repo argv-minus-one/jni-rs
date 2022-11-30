@@ -8,7 +8,7 @@ use crate::{errors::*, objects::JObject, signature::Primitive, sys::*};
 /// Rusty version of the JNI C `jvalue` enum. Used in Java method call arguments
 /// and returns.
 #[allow(missing_docs)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub enum JValue<'a> {
     Object(JObject<'a>),
     Byte(jbyte),

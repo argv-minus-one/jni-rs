@@ -113,12 +113,12 @@
 //! // This keeps Rust from "mangling" the name and making it unique for this
 //! // crate.
 //! #[no_mangle]
-//! pub extern "system" fn Java_HelloWorld_hello(env: JNIEnv,
+//! pub extern "system" fn Java_HelloWorld_hello<'a>(env: JNIEnv<'a>,
 //! // This is the class that owns our static method. It's not going to be used,
 //! // but still must be present to match the expected signature of a static
 //! // native method.
-//!                                              class: JClass,
-//!                                              input: JString)
+//!                                              class: JClass<'a>,
+//!                                              input: JString<'a>)
 //!                                              -> jstring {
 //!     // First, we have to get the string out of Java. Check out the `strings`
 //!     // module for more info on how this works.

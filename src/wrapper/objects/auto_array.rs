@@ -8,19 +8,28 @@ use crate::sys::{jboolean, jbyte, jchar, jdouble, jfloat, jint, jlong, jshort};
 use crate::{errors::*, objects::JObject, sys, JNIEnv};
 
 /// Trait to define type array access/release
-pub trait TypeArray {
+///
+/// # Safety
+///
+/// The methods of this trait must uphold the invariants described in [`JNIEnv::unsafe_clone`] when
+/// using the provided [`JNIEnv`].
+///
+/// The `get` method must return a valid pointer to the beginning of the JNI array.
+///
+/// The `release` method must not invalidate the `ptr` if the `mode` is [`sys::JNI_COMMIT`].
+pub unsafe trait TypeArray {
     /// getter
-    fn get(env: &JNIEnv, obj: JObject, is_copy: &mut jboolean) -> Result<*mut Self>;
+    fn get(env: &mut JNIEnv, obj: &JObject, is_copy: &mut jboolean) -> Result<*mut Self>;
 
     /// releaser
-    fn release(env: &JNIEnv, obj: JObject, ptr: NonNull<Self>, mode: i32) -> Result<()>;
+    unsafe fn release(env: &mut JNIEnv, obj: &JObject, ptr: NonNull<Self>, mode: i32) -> Result<()>;
 }
 
 // TypeArray builder
 macro_rules! type_array {
     ( $jni_type:ty, $jni_get:tt, $jni_release:tt ) => {
         /// $jni_type array access/release impl
-        impl TypeArray for $jni_type {
+        unsafe impl TypeArray for $jni_type {
             /// Get Java $jni_type array
             fn get(env: &JNIEnv, obj: JObject, is_copy: &mut jboolean) -> Result<*mut Self> {
                 let internal = env.get_native_interface();
@@ -35,7 +44,7 @@ macro_rules! type_array {
             }
 
             /// Release Java $jni_type array
-            fn release(env: &JNIEnv, obj: JObject, ptr: NonNull<Self>, mode: i32) -> Result<()> {
+            unsafe fn release(env: &JNIEnv, obj: JObject, ptr: NonNull<Self>, mode: i32) -> Result<()> {
                 let internal = env.get_native_interface();
                 jni_unchecked!(internal, $jni_release, *obj, ptr.as_ptr(), mode as i32);
                 Ok(())
@@ -73,17 +82,22 @@ pub struct AutoArray<'a, T: TypeArray> {
 }
 
 impl<'a, T: TypeArray> AutoArray<'a, T> {
-    pub(crate) fn new(env: &JNIEnv<'a>, obj: JObject<'a>, mode: ReleaseMode) -> Result<Self> {
+    pub(crate) fn new(env: &mut JNIEnv<'a>, obj: JObject<'a>, mode: ReleaseMode) -> Result<Self> {
+        // Safety: The cloned `JNIEnv` will not be used to create any local references. It will be
+        // passed to the methods of the `TypeArray` implementation, but that trait is `unsafe` and
+        // implementations are required to uphold the invariants of `unsafe_clone`.
+        let mut env = unsafe { env.unsafe_clone() };
+
         let mut is_copy: jboolean = 0xff;
         Ok(AutoArray {
             obj,
             ptr: {
-                let ptr = T::get(env, obj, &mut is_copy)?;
+                let ptr = T::get(&mut env, &obj, &mut is_copy)?;
                 NonNull::new(ptr).ok_or(Error::NullPtr("Non-null ptr expected"))?
             },
             mode,
             is_copy: is_copy == sys::JNI_TRUE,
-            env: *env,
+            env,
         })
     }
 
@@ -93,12 +107,20 @@ impl<'a, T: TypeArray> AutoArray<'a, T> {
     }
 
     /// Commits the changes to the array, if it is a copy
-    pub fn commit(&self) -> Result<()> {
-        self.release_array_elements(sys::JNI_COMMIT)
+    pub fn commit(&mut self) -> Result<()> {
+        unsafe { self.release_array_elements(sys::JNI_COMMIT) }
     }
 
-    fn release_array_elements(&self, mode: i32) -> Result<()> {
-        T::release(&self.env, self.obj, self.ptr, mode)
+    /// Calls the release function.
+    ///
+    /// # Safety
+    ///
+    /// `mode` must be a valid parameter to the JNI `Release<PrimitiveType>ArrayElements`' `mode`
+    /// parameter.
+    ///
+    /// If `mode` is not [`sys::JNI_COMMIT`], then the array must not have already been released.
+    unsafe fn release_array_elements(&mut self, mode: i32) -> Result<()> {
+        T::release(&mut self.env, &self.obj, self.ptr, mode)
     }
 
     /// Don't commit the changes to the array on release (if it is a copy).
@@ -122,7 +144,9 @@ impl<'a, T: TypeArray> AutoArray<'a, T> {
 
 impl<'a, T: TypeArray> Drop for AutoArray<'a, T> {
     fn drop(&mut self) {
-        let res = self.release_array_elements(self.mode as i32);
+        // Safety: `self.mode` is valid and the array has not yet been released.
+        let res = unsafe { self.release_array_elements(self.mode as i32) };
+
         match res {
             Ok(()) => {}
             Err(e) => error!("error releasing array: {:#?}", e),

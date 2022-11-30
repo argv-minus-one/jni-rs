@@ -7,11 +7,11 @@ use crate::{errors::*, JNIEnv};
 /// concrete types themselves in addition to their descriptors.
 pub trait Desc<'a, T> {
     /// Look up the concrete type from the JVM.
-    fn lookup(self, _: &JNIEnv<'a>) -> Result<T>;
+    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<T>;
 }
 
 impl<'a, T> Desc<'a, T> for T {
-    fn lookup(self, _: &JNIEnv<'a>) -> Result<T> {
+    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<T> {
         Ok(self)
     }
 }
