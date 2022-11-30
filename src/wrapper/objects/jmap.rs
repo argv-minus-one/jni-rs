@@ -227,7 +227,7 @@ where
 
         let iter = self.iter.as_obj();
         let has_next = unsafe {
-            self.map.env.call_method_unchecked(
+            env.call_method_unchecked(
                 iter,
                 self.has_next,
                 ReturnType::Primitive(Primitive::Boolean),
@@ -240,23 +240,18 @@ where
             return Ok(None);
         }
         let next = unsafe {
-            self.map
-                .env
-                .call_method_unchecked(iter, self.next, ReturnType::Object, &[])
+            env.call_method_unchecked(iter, self.next, ReturnType::Object, &[])
         }?
         .l()?;
+        let next = env.auto_local(next);
 
         let key = unsafe {
-            self.map
-                .env
-                .call_method_unchecked(next, self.get_key, ReturnType::Object, &[])
+            env.call_method_unchecked(next, self.get_key, ReturnType::Object, &[])
         }?
         .l()?;
 
         let value = unsafe {
-            self.map
-                .env
-                .call_method_unchecked(next, self.get_value, ReturnType::Object, &[])
+            env.call_method_unchecked(next, self.get_value, ReturnType::Object, &[])
         }?
         .l()?;
 
