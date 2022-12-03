@@ -94,7 +94,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
-            self.env.call_method_unchecked(
+            env.call_method_unchecked(
                 self.internal,
                 self.add_idx,
                 ReturnType::Primitive(Primitive::Void),
@@ -111,7 +111,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a int, rather than any other java type.
         let result = unsafe {
-            self.env.call_method_unchecked(
+            env.call_method_unchecked(
                 self.internal,
                 self.remove,
                 ReturnType::Object,
@@ -132,7 +132,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     pub fn size(&self, env: &mut JNIEnv) -> Result<jint> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         let result = unsafe {
-            self.env.call_method_unchecked(
+            env.call_method_unchecked(
                 self.internal,
                 self.size,
                 ReturnType::Primitive(Primitive::Int),
@@ -155,7 +155,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a int.
         let result = unsafe {
-            self.env.call_method_unchecked(
+            env.call_method_unchecked(
                 self.internal,
                 self.remove,
                 ReturnType::Object,
