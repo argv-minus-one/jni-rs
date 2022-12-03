@@ -6,7 +6,7 @@ use crate::{
 /// Lifetime'd representation of a `jclass`. Just a `JObject` wrapped in a new
 /// class.
 #[repr(transparent)]
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct JClass<'a>(JObject<'a>);
 
 impl<'a> ::std::ops::Deref for JClass<'a> {
