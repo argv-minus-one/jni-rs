@@ -118,6 +118,7 @@ use crate::{
 /// Calling unchecked methods with invalid arguments and/or invalid class and
 /// method descriptors may lead to segmentation fault.
 #[repr(transparent)]
+#[derive(Debug)]
 pub struct JNIEnv<'a> {
     internal: *mut sys::JNIEnv,
     lifetime: PhantomData<&'a ()>,
