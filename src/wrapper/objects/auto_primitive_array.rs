@@ -73,6 +73,12 @@ impl<'a, 'b> AutoPrimitiveArray<'a, 'b> {
     }
 }
 
+impl<'a, 'b> AsRef<JObject<'a>> for AutoPrimitiveArray<'a, 'b> {
+    fn as_ref(&self) -> &JObject<'a> {
+        &self.obj
+    }
+}
+
 impl<'a, 'b> Drop for AutoPrimitiveArray<'a, 'b> {
     fn drop(&mut self) {
         let res = self.release_primitive_array_critical(self.mode as i32);

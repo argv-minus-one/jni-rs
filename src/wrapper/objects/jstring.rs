@@ -8,6 +8,12 @@ use crate::{
 #[repr(transparent)]
 pub struct JString<'a>(JObject<'a>);
 
+impl<'a> AsRef<JObject<'a>> for JString<'a> {
+    fn as_ref(&self) -> &JObject<'a> {
+        &**self
+    }
+}
+
 impl<'a> ::std::ops::Deref for JString<'a> {
     type Target = JObject<'a>;
 

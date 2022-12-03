@@ -142,6 +142,12 @@ impl<'a, T: TypeArray> AutoArray<'a, T> {
     }
 }
 
+impl<'a, T: TypeArray> AsRef<JObject<'a>> for AutoArray<'a, T> {
+    fn as_ref(&self) -> &JObject<'a> {
+        &self.obj
+    }
+}
+
 impl<'a, T: TypeArray> Drop for AutoArray<'a, T> {
     fn drop(&mut self) {
         // Safety: `self.mode` is valid and the array has not yet been released.

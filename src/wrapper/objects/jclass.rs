@@ -9,6 +9,12 @@ use crate::{
 #[derive(Debug)]
 pub struct JClass<'a>(JObject<'a>);
 
+impl<'a> AsRef<JObject<'a>> for JClass<'a> {
+    fn as_ref(&self) -> &JObject<'a> {
+        &**self
+    }
+}
+
 impl<'a> ::std::ops::Deref for JClass<'a> {
     type Target = JObject<'a>;
 

@@ -6,6 +6,12 @@ use crate::{objects::JObject, sys::jobject};
 #[derive(Debug)]
 pub struct JByteBuffer<'a>(JObject<'a>);
 
+impl<'a> AsRef<JObject<'a>> for JByteBuffer<'a> {
+    fn as_ref(&self) -> &JObject<'a> {
+        &**self
+    }
+}
+
 impl<'a> ::std::ops::Deref for JByteBuffer<'a> {
     type Target = JObject<'a>;
 
