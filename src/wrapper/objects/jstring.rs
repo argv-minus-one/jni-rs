@@ -8,6 +8,12 @@ use crate::{
 #[repr(transparent)]
 pub struct JString<'a>(JObject<'a>);
 
+impl<'a> AsRef<JString<'a>> for JString<'a> {
+    fn as_ref(&self) -> &JString<'a> {
+        self
+    }
+}
+
 impl<'a> AsRef<JObject<'a>> for JString<'a> {
     fn as_ref(&self) -> &JObject<'a> {
         &**self

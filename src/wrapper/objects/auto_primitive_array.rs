@@ -73,6 +73,12 @@ impl<'a, 'b> AutoPrimitiveArray<'a, 'b> {
     }
 }
 
+impl<'a, 'b> AsRef<AutoPrimitiveArray<'a, 'b>> for AutoPrimitiveArray<'a,'b> {
+    fn as_ref(&self) -> &AutoPrimitiveArray<'a, 'b> {
+        self
+    }
+}
+
 impl<'a, 'b> AsRef<JObject<'a>> for AutoPrimitiveArray<'a, 'b> {
     fn as_ref(&self) -> &JObject<'a> {
         &self.obj

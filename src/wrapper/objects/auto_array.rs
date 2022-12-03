@@ -142,6 +142,12 @@ impl<'a, T: TypeArray> AutoArray<'a, T> {
     }
 }
 
+impl<'a, T: TypeArray> AsRef<AutoArray<'a, T>> for AutoArray<'a, T> {
+    fn as_ref(&self) -> &AutoArray<'a, T> {
+        self
+    }
+}
+
 impl<'a, T: TypeArray> AsRef<JObject<'a>> for AutoArray<'a, T> {
     fn as_ref(&self) -> &JObject<'a> {
         &self.obj

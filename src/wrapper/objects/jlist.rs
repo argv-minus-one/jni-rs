@@ -20,6 +20,12 @@ pub struct JList<'a: 'b, 'b> {
     size: JMethodID,
 }
 
+impl<'a: 'b, 'b> AsRef<JList<'a, 'b>> for JList<'a, 'b> {
+    fn as_ref(&self) -> &JList<'a, 'b> {
+        self
+    }
+}
+
 impl<'a: 'b, 'b> AsRef<JObject<'a>> for JList<'a, 'b> {
     fn as_ref(&self) -> &JObject<'a> {
         self.internal

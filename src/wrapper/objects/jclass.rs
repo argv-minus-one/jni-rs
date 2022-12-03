@@ -9,6 +9,12 @@ use crate::{
 #[derive(Debug)]
 pub struct JClass<'a>(JObject<'a>);
 
+impl<'a> AsRef<JClass<'a>> for JClass<'a> {
+    fn as_ref(&self) -> &JClass<'a> {
+        self
+    }
+}
+
 impl<'a> AsRef<JObject<'a>> for JClass<'a> {
     fn as_ref(&self) -> &JObject<'a> {
         &**self

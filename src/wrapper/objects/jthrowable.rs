@@ -8,6 +8,12 @@ use crate::{
 #[repr(transparent)]
 pub struct JThrowable<'a>(JObject<'a>);
 
+impl<'a> AsRef<JThrowable<'a>> for JThrowable<'a> {
+    fn as_ref(&self) -> &JThrowable<'a> {
+        self
+    }
+}
+
 impl<'a> AsRef<JObject<'a>> for JThrowable<'a> {
     fn as_ref(&self) -> &JObject<'a> {
         &**self

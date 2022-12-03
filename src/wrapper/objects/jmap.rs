@@ -20,6 +20,12 @@ pub struct JMap<'a: 'b, 'b> {
     remove: JMethodID,
 }
 
+impl<'a: 'b, 'b> AsRef<JMap<'a, 'b>> for JMap<'a, 'b> {
+    fn as_ref(&self) -> &JMap<'a, 'b> {
+        self
+    }
+}
+
 impl<'a: 'b, 'b> AsRef<JObject<'a>> for JMap<'a, 'b> {
     fn as_ref(&self) -> &JObject<'a> {
         self.internal

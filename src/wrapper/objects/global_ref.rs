@@ -32,6 +32,12 @@ struct GlobalRefGuard {
     vm: JavaVM,
 }
 
+impl AsRef<GlobalRef> for GlobalRef {
+    fn as_ref(&self) -> &GlobalRef {
+        self
+    }
+}
+
 impl AsRef<JObject<'static>> for GlobalRef {
     fn as_ref(&self) -> &JObject<'static> {
         &*self
