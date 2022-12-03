@@ -297,7 +297,7 @@ impl<'a> JNIEnv<'a> {
         Ok(jni_unchecked!(
             self.internal,
             IsInstanceOf,
-            object.into().as_raw(),
+            object.as_ref().as_raw(),
             class.as_raw()
         ) == sys::JNI_TRUE)
     }
