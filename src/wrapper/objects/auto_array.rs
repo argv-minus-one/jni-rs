@@ -31,7 +31,7 @@ macro_rules! type_array {
         /// $jni_type array access/release impl
         unsafe impl TypeArray for $jni_type {
             /// Get Java $jni_type array
-            fn get(env: &JNIEnv, obj: JObject, is_copy: &mut jboolean) -> Result<*mut Self> {
+            fn get(env: &mut JNIEnv, obj: &JObject, is_copy: &mut jboolean) -> Result<*mut Self> {
                 let internal = env.get_native_interface();
                 // Even though this method may throw OoME, use `jni_unchecked`
                 // instead of `jni_non_null_call` to remove (a slight) overhead
@@ -39,14 +39,14 @@ macro_rules! type_array {
                 // result inside AutoArray ctor. Also, modern Hotspot in case of lack
                 // of memory will return null and won't throw an exception:
                 // https://sourcegraph.com/github.com/openjdk/jdk/-/blob/src/hotspot/share/memory/allocation.hpp#L488-489
-                let res = jni_unchecked!(internal, $jni_get, *obj, is_copy);
+                let res = jni_unchecked!(internal, $jni_get, obj.as_raw(), is_copy);
                 Ok(res)
             }
 
             /// Release Java $jni_type array
-            unsafe fn release(env: &JNIEnv, obj: JObject, ptr: NonNull<Self>, mode: i32) -> Result<()> {
+            unsafe fn release(env: &mut JNIEnv, obj: &JObject, ptr: NonNull<Self>, mode: i32) -> Result<()> {
                 let internal = env.get_native_interface();
-                jni_unchecked!(internal, $jni_release, *obj, ptr.as_ptr(), mode as i32);
+                jni_unchecked!(internal, $jni_release, obj.as_raw(), ptr.as_ptr(), mode as i32);
                 Ok(())
             }
         }
