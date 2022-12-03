@@ -3,7 +3,7 @@ use crate::{objects::JObject, sys::jobject};
 /// Lifetime'd representation of a `jobject` that is an instance of the
 /// ByteBuffer Java class. Just a `JObject` wrapped in a new class.
 #[repr(transparent)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Debug)]
 pub struct JByteBuffer<'a>(JObject<'a>);
 
 impl<'a> ::std::ops::Deref for JByteBuffer<'a> {

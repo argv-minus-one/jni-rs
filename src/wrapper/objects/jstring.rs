@@ -6,7 +6,6 @@ use crate::{
 /// Lifetime'd representation of a `jstring`. Just a `JObject` wrapped in a new
 /// class.
 #[repr(transparent)]
-#[derive(Clone, Copy)]
 pub struct JString<'a>(JObject<'a>);
 
 impl<'a> ::std::ops::Deref for JString<'a> {
