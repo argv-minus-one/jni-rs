@@ -1,47 +1,57 @@
 use crate::{
     descriptors::Desc,
     errors::*,
-    objects::{JClass, JObject, JThrowable, JValue},
+    objects::{AutoLocal, JClass, JObject, JThrowable, JValue},
     strings::JNIString,
     JNIEnv,
 };
 
 const DEFAULT_EXCEPTION_CLASS: &str = "java/lang/RuntimeException";
 
-impl<'a, 'c, C, M> Desc<'a, JThrowable<'a>> for (C, M)
+unsafe impl<'a, 'c, C, M> Desc<'a, JThrowable<'a>> for (C, M)
 where
     C: Desc<'a, JClass<'c>>,
     M: Into<JNIString>,
 {
-    fn lookup(self, env: &JNIEnv<'a>) -> Result<JThrowable<'a>> {
-        let jmsg: JObject = env.new_string(self.1)?.into();
+    type Output = AutoLocal<'a, JThrowable<'a>>;
+
+    fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
+        let jmsg: AutoLocal<JObject> = env.auto_local(env.new_string(self.1)?.into());
         let obj: JThrowable = env
             .new_object(self.0, "(Ljava/lang/String;)V", &[JValue::from(jmsg)])?
             .into();
-        Ok(obj)
+        Ok(env.auto_local(obj))
     }
 }
 
-impl<'a> Desc<'a, JThrowable<'a>> for Exception {
-    fn lookup(self, env: &JNIEnv<'a>) -> Result<JThrowable<'a>> {
-        (self.class, self.msg).lookup(env)
+unsafe impl<'a> Desc<'a, JThrowable<'a>> for Exception {
+    type Output = AutoLocal<'a, JThrowable<'a>>;
+
+    fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
+        Desc::<JThrowable>::lookup((self.class, self.msg), env)
     }
 }
 
-impl<'a, 'b> Desc<'a, JThrowable<'a>> for &'b str {
-    fn lookup(self, env: &JNIEnv<'a>) -> Result<JThrowable<'a>> {
-        (DEFAULT_EXCEPTION_CLASS, self).lookup(env)
+unsafe impl<'a, 'b> Desc<'a, JThrowable<'a>> for &'b str {
+    type Output = AutoLocal<'a, JThrowable<'a>>;
+
+    fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
+        Desc::<JThrowable>::lookup((DEFAULT_EXCEPTION_CLASS, self), env)
     }
 }
 
-impl<'a> Desc<'a, JThrowable<'a>> for String {
-    fn lookup(self, env: &JNIEnv<'a>) -> Result<JThrowable<'a>> {
-        (DEFAULT_EXCEPTION_CLASS, self).lookup(env)
+unsafe impl<'a> Desc<'a, JThrowable<'a>> for String {
+    type Output = AutoLocal<'a, JThrowable<'a>>;
+
+    fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
+        Desc::<JThrowable>::lookup((DEFAULT_EXCEPTION_CLASS, self), env)
     }
 }
 
-impl<'a> Desc<'a, JThrowable<'a>> for JNIString {
-    fn lookup(self, env: &JNIEnv<'a>) -> Result<JThrowable<'a>> {
-        (DEFAULT_EXCEPTION_CLASS, self).lookup(env)
+unsafe impl<'a> Desc<'a, JThrowable<'a>> for JNIString {
+    type Output = AutoLocal<'a, JThrowable<'a>>;
+
+    fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
+        Desc::<JThrowable>::lookup((DEFAULT_EXCEPTION_CLASS, self), env)
     }
 }
