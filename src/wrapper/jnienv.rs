@@ -627,7 +627,7 @@ impl<'a> JNIEnv<'a> {
     /// [permanently-attached](struct.JavaVM.html#attaching-native-threads) native threads, etc.).
     pub fn auto_local<O>(&self, obj: O) -> AutoLocal<'a, O>
     where
-        O: AsMut<JObject<'a>>,
+        O: Into<JObject<'a>>,
     {
         AutoLocal::new(self, obj)
     }

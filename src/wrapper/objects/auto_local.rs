@@ -24,34 +24,24 @@ use crate::{objects::JObject, JNIEnv};
 /// [spec-references]: https://docs.oracle.com/en/java/javase/12/docs/specs/jni/design.html#referencing-java-objects
 /// [android-jni-references]: https://developer.android.com/training/articles/perf-jni#local-and-global-references
 #[derive(Debug)]
-pub struct AutoLocal<'a, T> {
+pub struct AutoLocal<'a, T>
+where
+    T: Into<JObject<'a>>,
+{
     obj: T,
     env: JNIEnv<'a>,
 }
 
-impl<'a, T> AutoLocal<'a, T> {
+impl<'a, T> AutoLocal<'a, T>
+where
+    T: Into<JObject<'a>>,
+{
     /// Creates a new auto-delete wrapper for a local ref.
     ///
     /// Once this wrapper goes out of scope, the `delete_local_ref` will be
     /// called on the object. While wrapped, the object can be accessed via
     /// the `Deref` impl.
-    pub fn new(env: &JNIEnv<'a>, obj: T) -> Self
-    where
-        T: AsMut<JObject<'a>>,
-    {
-        Self::new_unchecked(env, obj)
-    }
-
-    /// Creates a new auto-delete wrapper for a local ref.
-    ///
-    /// The resulting [`AutoLocal`] will only call [`JNIEnv::delete_local_ref`] on `obj` if its
-    /// type, `T`, implements <code>[AsMut]&lt;[JObject]&lt;'a>></code>. If not, `obj` will be
-    /// dropped without calling `delete_local_ref`. This function is useful in generic code that
-    /// needs to accept both owned and borrowed `JObject`s, and auto-delete owned `JObject`s.
-    ///
-    /// This function is not unsafe, but incorrect usage may result in a memory leak. Use
-    /// [`AutoLocal::new`] instead, when possible.
-    pub fn new_unchecked(env: &JNIEnv<'a>, obj: T) -> Self {
+    pub fn new(env: &JNIEnv<'a>, obj: T) -> Self {
         // Safety: The cloned `JNIEnv` will not be used to create any local references, only to
         // delete one.
         let env = unsafe { env.unsafe_clone() };
@@ -103,10 +93,10 @@ impl<'a, T> AutoLocal<'a, T> {
 
 impl<'a, T> Drop for AutoLocal<'a, T>
 where
-    T: AsMut<JObject<'a>>,
+    T: Into<JObject<'a>>,
 {
     fn drop(&mut self) {
-        let obj: JObject<'a> = mem::take(self.obj.as_mut());
+        let obj = self.forget();
 
         let res = self.env.delete_local_ref(obj);
         match res {
@@ -118,7 +108,7 @@ where
 
 impl<'a, T, U> AsRef<U> for AutoLocal<'a, T>
 where
-    T: AsRef<U>,
+    T: AsRef<U> + Into<JObject<'a>>,
 {
     fn as_ref(&self) -> &U {
         self.obj.as_ref()
@@ -127,14 +117,17 @@ where
 
 impl<'a, T, U> AsMut<U> for AutoLocal<'a, T>
 where
-    T: AsMut<U>,
+    T: AsMut<U> + Into<JObject<'a>>,
 {
     fn as_mut(&mut self) -> &mut U {
         self.obj.as_mut()
     }
 }
 
-impl<'a, T> Deref for AutoLocal<'a, T> {
+impl<'a, T> Deref for AutoLocal<'a, T>
+where
+    T: Into<JObject<'a>>,
+{
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
@@ -142,7 +135,10 @@ impl<'a, T> Deref for AutoLocal<'a, T> {
     }
 }
 
-impl<'a, T> DerefMut for AutoLocal<'a, T> {
+impl<'a, T> DerefMut for AutoLocal<'a, T>
+where
+    T: Into<JObject<'a>>,
+{
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.obj
     }
