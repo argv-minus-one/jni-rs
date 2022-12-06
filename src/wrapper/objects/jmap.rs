@@ -206,10 +206,9 @@ impl<'map, 'a: 'b, 'b, 'iter> JMapIter<'map, 'a, 'b, 'iter> {
     pub fn next<'a2>(&mut self, env: &mut JNIEnv<'a2>) -> Result<Option<(JObject<'a2>, JObject<'a2>)>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for these functions. We know none expect args.
 
-        let iter = self.iter.as_obj();
         let has_next = unsafe {
             env.call_method_unchecked(
-                iter,
+                &self.iter,
                 self.has_next,
                 ReturnType::Primitive(Primitive::Boolean),
                 &[],
@@ -221,7 +220,7 @@ impl<'map, 'a: 'b, 'b, 'iter> JMapIter<'map, 'a, 'b, 'iter> {
             return Ok(None);
         }
         let next = unsafe {
-            env.call_method_unchecked(iter, self.next, ReturnType::Object, &[])
+            env.call_method_unchecked(&self.iter, self.next, ReturnType::Object, &[])
         }?
         .l()?;
         let next = env.auto_local(next);

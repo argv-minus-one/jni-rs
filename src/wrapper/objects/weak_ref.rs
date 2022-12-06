@@ -87,7 +87,7 @@ impl WeakRef {
 
         // Unlike `NewLocalRef`, the JNI spec does *not* guarantee that `NewGlobalRef` will return a
         // null pointer if the object was GC'd, so we'll have to check.
-        if env.is_same_object(r.as_obj(), JObject::null())? {
+        if env.is_same_object(&r, JObject::null())? {
             Ok(None)
         } else {
             Ok(Some(r))
