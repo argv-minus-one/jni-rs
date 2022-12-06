@@ -56,7 +56,7 @@ where
     /// dropped. You must either remember to delete the local ref manually, or
     /// be
     /// ok with it getting deleted once the foreign method returns.
-    pub fn forget(mut self) -> T {
+    pub fn forget(self) -> T {
         // We need to move `self.obj` out of `self`. Normally that's trivial, but moving out of a
         // type with a `Drop` implementation is not allowed. We'll have to do it manually (and
         // carefully) with `unsafe`.
@@ -67,7 +67,7 @@ where
 
         // Before we mutilate `self`, make sure its drop code will not be automatically run. That
         // would cause undefined behavior.
-        let self_md = ManuallyDrop::new(self);
+        let mut self_md = ManuallyDrop::new(self);
 
         unsafe {
             // Drop the `JNIEnv` in place. As of this writing, that's a no-op, but if `JNIEnv`

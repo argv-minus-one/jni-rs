@@ -36,7 +36,7 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
-    pub fn from_env(env: &mut JNIEnv, obj: &'b JObject<'a>) -> Result<JMap<'a, 'b>> {
+    pub fn from_env(env: &mut JNIEnv<'a>, obj: &'b JObject<'a>) -> Result<JMap<'a, 'b>> {
         let class = env.auto_local(env.find_class("java/util/Map")?);
 
         let get = env.get_method_id(&class, "get", "(Ljava/lang/Object;)Ljava/lang/Object;")?;
@@ -226,12 +226,12 @@ impl<'map, 'a: 'b, 'b, 'iter> JMapIter<'map, 'a, 'b, 'iter> {
         let next = env.auto_local(next);
 
         let key = unsafe {
-            env.call_method_unchecked(next, self.get_key, ReturnType::Object, &[])
+            env.call_method_unchecked(&next, self.get_key, ReturnType::Object, &[])
         }?
         .l()?;
 
         let value = unsafe {
-            env.call_method_unchecked(next, self.get_value, ReturnType::Object, &[])
+            env.call_method_unchecked(&next, self.get_value, ReturnType::Object, &[])
         }?
         .l()?;
 

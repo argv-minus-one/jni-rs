@@ -108,7 +108,7 @@ impl<'a: 'b, 'b> JavaStr<'a, 'b> {
     /// [JavaStr] with [`Self::from_raw`], which will release the backing string
     /// when it is dropped.
     pub fn into_raw(self) -> *const c_char {
-        let _dont_call_drop = std::mem::ManuallyDrop::new(self);
+        let mut _dont_call_drop = std::mem::ManuallyDrop::new(self);
 
         // Drop the `JNIEnv` in place. As of this writing, that's a no-op, but if `JNIEnv`
         // gains any drop code in the future, this will run it.

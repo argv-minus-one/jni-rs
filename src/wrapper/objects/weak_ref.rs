@@ -67,7 +67,7 @@ impl WeakRef {
         let r = env.new_local_ref(unsafe { JObject::from_raw(self.as_raw()) })?;
 
         // Per JNI spec, `NewLocalRef` will return a null pointer if the object was GC'd.
-        if r.into_raw().is_null() {
+        if r.is_null() {
             Ok(None)
         } else {
             Ok(Some(r))

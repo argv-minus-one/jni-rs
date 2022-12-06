@@ -2001,7 +2001,7 @@ impl<'a> JNIEnv<'a> {
         // TODO clean this up
         match val {
             JValue::Object(o) => {
-                jni_unchecked!(self.internal, SetObjectField, obj, field, o.into_raw());
+                jni_unchecked!(self.internal, SetObjectField, obj, field, o.as_raw());
             }
             // JavaType::Object
             JValue::Bool(b) => {
@@ -2056,7 +2056,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Set a field. Does the same lookups as `get_field` and ensures that the
     /// type matches the given value.
-    pub fn set_field<'b, O, S, T>(&self, obj: O, name: S, ty: T, val: JValue) -> Result<()>
+    pub fn set_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T, val: JValue) -> Result<()>
     where
         O: AsRef<JObject<'b>>,
         S: Into<JNIString>,
@@ -2177,7 +2177,7 @@ impl<'a> JNIEnv<'a> {
                 SetStaticObjectField,
                 class,
                 field,
-                v.into_raw()
+                v.as_raw()
             ),
             JValue::Byte(v) => jni_unchecked!(self.internal, SetStaticByteField, class, field, v),
             JValue::Char(v) => jni_unchecked!(self.internal, SetStaticCharField, class, field, v),

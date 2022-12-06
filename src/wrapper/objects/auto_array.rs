@@ -90,11 +90,11 @@ impl<'a, T: TypeArray> AutoArray<'a, T> {
 
         let mut is_copy: jboolean = 0xff;
         Ok(AutoArray {
-            obj,
             ptr: {
                 let ptr = T::get(&mut env, &obj, &mut is_copy)?;
                 NonNull::new(ptr).ok_or(Error::NullPtr("Non-null ptr expected"))?
             },
+            obj,
             mode,
             is_copy: is_copy == sys::JNI_TRUE,
             env,
