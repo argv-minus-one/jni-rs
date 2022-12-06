@@ -1,5 +1,5 @@
 use std::{
-    mem,
+    mem::ManuallyDrop,
     ops::{Deref, DerefMut},
     ptr,
 };
@@ -62,32 +62,29 @@ where
         // carefully) with `unsafe`.
         //
         // This could be done without `unsafe` by adding `where T: Default` and using
-        // `mem::replace` to extract `self.obj`, but doing it this way avoids unnecessarily running
-        // the drop routine on `self`.
+        // `std::mem::replace` to extract `self.obj`, but doing it this way avoids unnecessarily
+        // running the drop routine on `self`.
 
-        let obj = unsafe {
+        // Before we mutilate `self`, make sure its drop code will not be automatically run. That
+        // would cause undefined behavior.
+        let self_md = ManuallyDrop::new(self);
+
+        unsafe {
             // Drop the `JNIEnv` in place. As of this writing, that's a no-op, but if `JNIEnv`
             // gains any drop code in the future, this will run it.
             //
-            // Safety: The `&mut` proves that `self.env` is valid and not aliased. It is not
-            // accessed again after this point. The `mem::forget` below prevents it from being
-            // dropped twice.
-            ptr::drop_in_place(&mut self.env);
+            // Safety: The `&mut` proves that `self_md.env` is valid and not aliased. It is not
+            // accessed again after this point. It is wrapped inside `ManuallyDrop`, and will
+            // therefore not be dropped twice.
+            ptr::drop_in_place(&mut self_md.env);
 
-            // Move `obj` out of `self`.
+            // Move `obj` out of `self` and return it.
             //
-            // Safety: The `&mut` proves that `self.obj` is valid and not aliased. It is not
-            // accessed again after this point. The `mem::forget` below prevents it from being
-            // dropped after it is moved.
-            ptr::read(&mut self.obj)
-        };
-
-        // Now that we've done that, `self` being dropped normally would trigger undefined
-        // behavior, so we need to prevent that from happening.
-        mem::forget(self);
-
-        // Return the extracted `T`.
-        obj
+            // Safety: The `&mut` proves that `self_md.obj` is valid and not aliased. It is not
+            // accessed again after this point. It is wrapped inside `ManuallyDrop`, and will
+            // therefore not be dropped after it is moved.
+            ptr::read(&mut self_md.obj)
+        }
     }
 }
 
