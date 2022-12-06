@@ -20,6 +20,11 @@ use crate::{JNIEnv, objects::GlobalRef};
 /// belong to a local reference frame, that is, it is either null or a
 /// [global reference][GlobalRef].
 ///
+/// Note that an *owned* `JObject` is always a local reference and will never
+/// have the `'static` lifetime. [`GlobalRef`] does implement
+/// <code>[AsRef]&lt;JObject&lt;'static>></code>, but this only yields a
+/// *borrowed* `&JObject<'static>`, never an owned `JObject<'static>`.
+///
 /// Local references belong to a single thread and are not safe to share across
 /// threads. This type implements [`Send`] and [`Sync`] if and only if the
 /// lifetime `'a` is `'static`.

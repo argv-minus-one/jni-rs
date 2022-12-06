@@ -8,6 +8,10 @@ use crate::{
     sys, JNIEnv, JavaVM,
 };
 
+// Note: `WeakRef` must not implement `Into<JObject>`! If it did, then it would be possible to
+// wrap it in `AutoLocal`, which would cause undefined behavior upon drop as a result of calling
+// the wrong JNI function to delete the reference.
+
 /// A *weak* global JVM reference. These are global in scope like
 /// [`GlobalRef`], and may outlive the `JNIEnv` they came from, but are
 /// *not* guaranteed to not get collected until released.

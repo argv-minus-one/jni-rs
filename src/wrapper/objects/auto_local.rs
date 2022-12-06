@@ -34,6 +34,9 @@ where
 
 impl<'a, T> AutoLocal<'a, T>
 where
+    // Note that this bound prevents `AutoLocal` from wrapping a `GlobalRef`, which implements
+    // `AsRef<JObject<'static>>` but *not* `Into<JObject<'static>>`. This is good, because trying
+    // to delete a global reference as though it were local would cause undefined behavior.
     T: Into<JObject<'a>>,
 {
     /// Creates a new auto-delete wrapper for a local ref.

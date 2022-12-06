@@ -4,6 +4,10 @@ use log::{debug, warn};
 
 use crate::{errors::Result, objects::JObject, sys, JNIEnv, JavaVM};
 
+// Note: `GlobalRef` must not implement `Into<JObject>`! If it did, then it would be possible to
+// wrap it in `AutoLocal`, which would cause undefined behavior upon drop as a result of calling
+// the wrong JNI function to delete the reference.
+
 /// A global JVM reference. These are "pinned" by the garbage collector and are
 /// guaranteed to not get collected until released. Thus, this is allowed to
 /// outlive the `JNIEnv` that it came from and can be used in other threads.
