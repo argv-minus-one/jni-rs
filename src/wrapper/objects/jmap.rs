@@ -151,7 +151,7 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
         // Get the iterator over Map entries.
         // Use the local frame till #109 is resolved, so that implicitly looked-up
         // classes are freed promptly.
-        let iter = env.with_local_frame(16, || {
+        let iter = env.with_local_frame(16, |env| {
             // SAFETY: We keep the class loaded, and fetched the method ID for this function. Arg list is known empty.
             let entry_set = unsafe {
                 env.call_method_unchecked(
