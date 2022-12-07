@@ -28,7 +28,7 @@ pub struct AutoLocal<'a, T>
 where
     T: Into<JObject<'a>>,
 {
-    obj: T,
+    obj: ManuallyDrop<T>,
     env: JNIEnv<'a>,
 }
 
@@ -49,7 +49,7 @@ where
         // delete one.
         let env = unsafe { env.unsafe_clone() };
 
-        AutoLocal { obj, env }
+        AutoLocal { obj: ManuallyDrop::new(obj), env }
     }
 
     /// Forget the wrapper, returning the original object.
@@ -86,7 +86,7 @@ where
             // Safety: The `&mut` proves that `self_md.obj` is valid and not aliased. It is not
             // accessed again after this point. It is wrapped inside `ManuallyDrop`, and will
             // therefore not be dropped after it is moved.
-            ptr::read(&mut self_md.obj)
+            ptr::read(&mut *self_md.obj)
         }
     }
 }
@@ -96,8 +96,16 @@ where
     T: Into<JObject<'a>>,
 {
     fn drop(&mut self) {
-        let obj = self.forget();
+        // Extract the local reference from `self.obj` so that we can delete it.
+        //
+        // This is needed because it is not allowed to move out of `self` during drop. A safe
+        // alternative would be to wrap `self.obj` in `Option`, but that would incur a run-time
+        // performance penalty from constantly checking if it's `None`.
+        //
+        // Safety: `self.obj` is not used again after this `take` call.
+        let obj = unsafe { ManuallyDrop::take(&mut self.obj) };
 
+        // Delete the extracted local reference.
         let res = self.env.delete_local_ref(obj);
         match res {
             Ok(()) => {}
