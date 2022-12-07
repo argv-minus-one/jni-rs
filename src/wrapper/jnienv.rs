@@ -16,7 +16,7 @@ use crate::{
     objects::{
         AutoArray, AutoLocal, AutoPrimitiveArray, GlobalRef, JByteBuffer, JClass, JFieldID, JList,
         JMap, JMethodID, JObject, JStaticFieldID, JStaticMethodID, JString, JThrowable, JValue,
-        ReleaseMode, TypeArray, WeakRef,
+        JValueOwned, JValueRef, ReleaseMode, TypeArray, WeakRef,
     },
     signature::{JavaType, Primitive, TypeSignature},
     strings::{JNIString, JavaStr},
@@ -952,7 +952,7 @@ impl<'a> JNIEnv<'a> {
         method_id: U,
         ret: ReturnType,
         args: &[jvalue],
-    ) -> Result<JValue<'a>>
+    ) -> Result<JValueOwned<'a>>
     where
         T: Desc<'a, JClass<'c>>,
         U: Desc<'a, JStaticMethodID>,
@@ -1073,7 +1073,7 @@ impl<'a> JNIEnv<'a> {
         method_id: T,
         ret: ReturnType,
         args: &[jvalue],
-    ) -> Result<JValue<'a>>
+    ) -> Result<JValueOwned<'a>>
     where
         O: AsRef<JObject<'b>>,
         T: Desc<'a, JMethodID>,
@@ -1151,8 +1151,8 @@ impl<'a> JNIEnv<'a> {
         obj: O,
         name: S,
         sig: T,
-        args: &[JValue],
-    ) -> Result<JValue<'a>>
+        args: &[JValueRef],
+    ) -> Result<JValueOwned<'a>>
     where
         O: AsRef<JObject<'b>>,
         S: Into<JNIString>,
@@ -1185,7 +1185,7 @@ impl<'a> JNIEnv<'a> {
 
         let class = self.auto_local(self.get_object_class(obj)?);
 
-        let args: Vec<jvalue> = args.iter().map(|v| v.to_jni()).collect();
+        let args: Vec<jvalue> = args.iter().map(|v| v.as_jni()).collect();
 
         // SAFETY: We've obtained the method_id above, so it is valid for this class.
         // We've also validated the argument counts and types using the same type signature
@@ -1210,8 +1210,8 @@ impl<'a> JNIEnv<'a> {
         class: T,
         name: U,
         sig: V,
-        args: &[JValue],
-    ) -> Result<JValue<'a>>
+        args: &[JValueRef],
+    ) -> Result<JValueOwned<'a>>
     where
         T: Desc<'a, JClass<'c>>,
         U: Into<JNIString>,
@@ -1242,7 +1242,7 @@ impl<'a> JNIEnv<'a> {
         let class = class.lookup(self)?;
         let class = class.as_ref();
 
-        let args: Vec<jvalue> = args.iter().map(|v| v.to_jni()).collect();
+        let args: Vec<jvalue> = args.iter().map(|v| v.as_jni()).collect();
 
         // SAFETY: We've obtained the method_id above, so it is valid for this class.
         // We've also validated the argument counts and types using the same type signature
@@ -1256,7 +1256,7 @@ impl<'a> JNIEnv<'a> {
         &mut self,
         class: T,
         ctor_sig: U,
-        ctor_args: &[JValue],
+        ctor_args: &[JValueRef],
     ) -> Result<JObject<'a>>
     where
         T: Desc<'a, JClass<'c>>,
@@ -1298,7 +1298,7 @@ impl<'a> JNIEnv<'a> {
 
         let method_id: JMethodID = Desc::<JMethodID>::lookup((class, ctor_sig), self)?;
 
-        let ctor_args: Vec<jvalue> = ctor_args.iter().map(|v| v.to_jni()).collect();
+        let ctor_args: Vec<jvalue> = ctor_args.iter().map(|v| v.as_jni()).collect();
         // SAFETY: We've obtained the method_id above, so it is valid for this class.
         // We've also validated the argument counts and types using the same type signature
         // we fetched the original method ID from.
@@ -1948,7 +1948,7 @@ impl<'a> JNIEnv<'a> {
     }
 
     /// Get a field without checking the provided type against the actual field.
-    pub fn get_field_unchecked<'b, O, T>(&mut self, obj: O, field: T, ty: ReturnType) -> Result<JValue<'a>>
+    pub fn get_field_unchecked<'b, O, T>(&mut self, obj: O, field: T, ty: ReturnType) -> Result<JValueOwned<'a>>
     where
         O: AsRef<JObject<'b>>,
         T: Desc<'a, JFieldID>,
@@ -1987,7 +1987,7 @@ impl<'a> JNIEnv<'a> {
     }
 
     /// Set a field without any type checking.
-    pub fn set_field_unchecked<'b, O, T>(&mut self, obj: O, field: T, val: JValue) -> Result<()>
+    pub fn set_field_unchecked<'b, O, T>(&mut self, obj: O, field: T, val: JValueRef) -> Result<()>
     where
         O: AsRef<JObject<'b>>,
         T: Desc<'a, JFieldID>,
@@ -2038,7 +2038,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Get a field. Requires an object class lookup and a field id lookup
     /// internally.
-    pub fn get_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T) -> Result<JValue<'a>>
+    pub fn get_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T) -> Result<JValueOwned<'a>>
     where
         O: AsRef<JObject<'b>>,
         S: Into<JNIString>,
@@ -2056,7 +2056,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Set a field. Does the same lookups as `get_field` and ensures that the
     /// type matches the given value.
-    pub fn set_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T, val: JValue) -> Result<()>
+    pub fn set_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T, val: JValueRef) -> Result<()>
     where
         O: AsRef<JObject<'b>>,
         S: Into<JNIString>,
@@ -2098,7 +2098,7 @@ impl<'a> JNIEnv<'a> {
         class: T,
         field: U,
         ty: JavaType,
-    ) -> Result<JValue<'a>>
+    ) -> Result<JValueOwned<'a>>
     where
         T: Desc<'a, JClass<'c>>,
         U: Desc<'a, JStaticFieldID>,
@@ -2146,7 +2146,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Get a static field. Requires a class lookup and a field id lookup
     /// internally.
-    pub fn get_static_field<'c, T, U, V>(&mut self, class: T, field: U, sig: V) -> Result<JValue<'a>>
+    pub fn get_static_field<'c, T, U, V>(&mut self, class: T, field: U, sig: V) -> Result<JValueOwned<'a>>
     where
         T: Desc<'a, JClass<'c>>,
         U: Into<JNIString>,
@@ -2163,7 +2163,7 @@ impl<'a> JNIEnv<'a> {
     }
 
     /// Set a static field. Requires a class lookup and a field id lookup internally.
-    pub fn set_static_field<'c, T, U>(&mut self, class: T, field: U, value: JValue) -> Result<()>
+    pub fn set_static_field<'c, T, U>(&mut self, class: T, field: U, value: JValueRef) -> Result<()>
     where
         T: Desc<'a, JClass<'c>>,
         U: Desc<'a, JStaticFieldID>,

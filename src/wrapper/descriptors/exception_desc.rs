@@ -1,7 +1,7 @@
 use crate::{
     descriptors::Desc,
     errors::*,
-    objects::{AutoLocal, JClass, JObject, JThrowable, JValue},
+    objects::{AutoLocal, JClass, JObject, JThrowable, JValueRef},
     strings::JNIString,
     JNIEnv,
 };
@@ -18,7 +18,7 @@ where
     fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
         let jmsg: AutoLocal<JObject> = env.auto_local(env.new_string(self.1)?.into());
         let obj: JThrowable = env
-            .new_object(self.0, "(Ljava/lang/String;)V", &[JValue::from(jmsg)])?
+            .new_object(self.0, "(Ljava/lang/String;)V", &[JValueRef::from(&jmsg)])?
             .into();
         Ok(env.auto_local(obj))
     }
