@@ -756,13 +756,13 @@ impl<'a> JNIEnv<'a> {
         T: Desc<'a, JClass<'c>>,
         U: Into<JNIString>,
         V: Into<JNIString>,
-        C: for<'d> Fn(&JClass<'d>, &JNIString, &JNIString) -> Result<R>,
+        C: for<'d> Fn(&mut Self, &JClass<'d>, &JNIString, &JNIString) -> Result<R>,
     {
         let class = class.lookup(self)?;
         let ffi_name = name.into();
         let sig = sig.into();
 
-        let res: Result<R> = catch!({ get_method(class.as_ref(), &ffi_name, &sig) });
+        let res: Result<R> = catch!({ get_method(self, class.as_ref(), &ffi_name, &sig) });
 
         match res {
             Ok(m) => Ok(m),
@@ -791,9 +791,9 @@ impl<'a> JNIEnv<'a> {
         U: Into<JNIString>,
         V: Into<JNIString>,
     {
-        self.get_method_id_base(class, name, sig, |class, name, sig| {
+        self.get_method_id_base(class, name, sig, |env, class, name, sig| {
             let method_id = jni_non_null_call!(
-                self.internal,
+                env.internal,
                 GetMethodID,
                 class.as_raw(),
                 name.as_ptr(),
@@ -822,9 +822,9 @@ impl<'a> JNIEnv<'a> {
         U: Into<JNIString>,
         V: Into<JNIString>,
     {
-        self.get_method_id_base(class, name, sig, |class, name, sig| {
+        self.get_method_id_base(class, name, sig, |env, class, name, sig| {
             let method_id = jni_non_null_call!(
-                self.internal,
+                env.internal,
                 GetStaticMethodID,
                 class.as_raw(),
                 name.as_ptr(),
