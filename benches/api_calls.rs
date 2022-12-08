@@ -388,4 +388,52 @@ mod tests {
             let _ = black_box(Rc::clone(&rc));
         });
     }
+
+    fn many_local_refs_deleted(
+        b: &mut Bencher,
+        delete_one_at_a_time: bool,
+        frame_count: usize,
+        lrs_per_frame: u16,
+    ) {
+        let _env = VM.attach_current_thread().unwrap();
+        let env = VM.get_env().unwrap();
+        let obj = env.new_string("foo").unwrap();
+        let mut lrs = Vec::<JObject>::with_capacity(lrs_per_frame.into());
+
+        env.with_local_frame(lrs_per_frame.into(), || {
+            b.iter(|| for _ in 0..frame_count {
+                let mut make_lrs = || {
+                    for _ in 0usize..lrs_per_frame.into() {
+                        lrs.push(env.new_local_ref(*obj).unwrap());
+                    }
+
+                    Ok(JObject::null())
+                };
+
+            if delete_one_at_a_time {
+                    make_lrs().unwrap();
+
+                    for lr in lrs.drain(..) {
+                    env.delete_local_ref(lr).unwrap();
+                }
+            }
+                else {
+                    env.with_local_frame(lrs_per_frame.into(), make_lrs).unwrap();
+                    lrs.clear();
+                }
+            });
+
+            Ok(JObject::null())
+        }).unwrap();
+    }
+
+    #[bench]
+    fn many_local_refs_deleted_one_at_a_time(b: &mut Bencher) {
+        many_local_refs_deleted(b, true, 1000, 10);
+    }
+
+    #[bench]
+    fn many_local_refs_deleted_all_at_once(b: &mut Bencher) {
+        many_local_refs_deleted(b, false, 1000, 10);
+    }
 }
