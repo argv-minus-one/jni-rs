@@ -201,6 +201,18 @@ pub struct JListIter<'list, 'a: 'b, 'b> {
 }
 
 impl<'list, 'a: 'b, 'b> JListIter<'list, 'a, 'b> {
+    /// Advances the iterator and returns the next object in the
+    /// `java.util.List`, or `None` if there are no more objects.
+    ///
+    /// This returns:
+    ///
+    /// * `Ok(Some(_))`: if there was another object in the list.
+    /// * `Ok(None)`: if there are no more objects in the list.
+    /// * `Err(_)`: if there was an error calling the Java method to
+    ///   get the next object.
+    ///
+    /// This is like [`Iterator::next`], but requires a parameter of
+    /// type `&mut JNIEnv` in order to call into Java.
     pub fn next<'a2>(&mut self, env: &mut JNIEnv<'a2>) -> Result<Option<JObject<'a2>>> {
         if self.current == self.size {
             return Ok(None);

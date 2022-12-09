@@ -204,6 +204,18 @@ pub struct JMapIter<'map, 'a: 'b, 'b, 'iter> {
 }
 
 impl<'map, 'a: 'b, 'b, 'iter> JMapIter<'map, 'a, 'b, 'iter> {
+    /// Advances the iterator and returns the next key-value pair in the
+    /// `java.util.Map`, or `None` if there are no more objects.
+    ///
+    /// This returns:
+    ///
+    /// * `Ok(Some(_))`: if there was another key-value pair in the map.
+    /// * `Ok(None)`: if there are no more key-value pairs in the map.
+    /// * `Err(_)`: if there was an error calling the Java method to
+    ///   get the next key-value pair.
+    ///
+    /// This is like [`Iterator::next`], but requires a parameter of
+    /// type `&mut JNIEnv` in order to call into Java.
     pub fn next<'a2>(&mut self, env: &mut JNIEnv<'a2>) -> Result<Option<(JObject<'a2>, JObject<'a2>)>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for these functions. We know none expect args.
 
