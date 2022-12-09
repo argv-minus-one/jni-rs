@@ -1,6 +1,6 @@
 use crate::{
     errors::*,
-    objects::{JMethodID, JObject, JValue},
+    objects::{AutoLocal, JMethodID, JObject, JValue},
     signature::{Primitive, ReturnType},
     sys::jint,
     JNIEnv,
@@ -37,8 +37,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
     pub fn from_env(env: &mut JNIEnv, obj: &'b JObject<'a>) -> Result<JList<'a, 'b>> {
-        let class = env.find_class("java/util/List")?;
-        let class = env.auto_local(class);
+        let class = AutoLocal::new(env.find_class("java/util/List")?, env);
 
         let get = env.get_method_id(&class, "get", "(I)Ljava/lang/Object;")?;
         let add = env.get_method_id(&class, "add", "(Ljava/lang/Object;)Z")?;

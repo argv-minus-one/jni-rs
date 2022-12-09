@@ -629,7 +629,7 @@ impl<'a> JNIEnv<'a> {
     where
         O: Into<JObject<'a>>,
     {
-        AutoLocal::new(self, obj)
+        AutoLocal::new(obj, self)
     }
 
     /// Deletes the local reference.

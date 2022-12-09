@@ -44,7 +44,7 @@ where
     /// Once this wrapper goes out of scope, the `delete_local_ref` will be
     /// called on the object. While wrapped, the object can be accessed via
     /// the `Deref` impl.
-    pub fn new(env: &JNIEnv<'a>, obj: T) -> Self {
+    pub fn new(obj: T, env: &JNIEnv<'a>) -> Self {
         // Safety: The cloned `JNIEnv` will not be used to create any local references, only to
         // delete one.
         let env = unsafe { env.unsafe_clone() };

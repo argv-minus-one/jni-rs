@@ -13,8 +13,7 @@ where
     type Output = AutoLocal<'a, JClass<'a>>;
 
     fn lookup(self, env: &mut JNIEnv<'a>) -> Result<Self::Output> {
-        let class = env.find_class(self)?;
-        Ok(env.auto_local(class))
+        Ok(AutoLocal::new(env.find_class(self)?, env))
     }
 }
 
