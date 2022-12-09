@@ -8,7 +8,7 @@ use lazy_static::lazy_static;
 
 use jni::{
     descriptors::Desc,
-    objects::{JClass, JMethodID, JObject, JStaticMethodID, JValue},
+    objects::{GlobalRef, JClass, JMethodID, JObject, JStaticMethodID, JValue},
     signature::{Primitive, ReturnType},
     sys::jint,
     InitArgsBuilder, JNIEnv, JNIVersion, JavaVM,
@@ -435,5 +435,23 @@ mod tests {
     #[bench]
     fn many_local_refs_deleted_all_at_once(b: &mut Bencher) {
         many_local_refs_deleted(b, false, 1000, 10);
+    }
+
+    #[bench]
+    fn many_global_refs_deleted(b: &mut Bencher) {
+        let _env = VM.attach_current_thread().unwrap();
+        let env = VM.get_env().unwrap();
+        let obj = env.new_string("foo").unwrap();
+
+        const GR_COUNT: usize = 10000;
+        let mut grs = Vec::<GlobalRef>::with_capacity(GR_COUNT);
+
+        b.iter(|| {
+            for _ in 0..GR_COUNT {
+                grs.push(env.new_global_ref(obj).unwrap());
+            }
+
+            grs.clear();
+        });
     }
 }
