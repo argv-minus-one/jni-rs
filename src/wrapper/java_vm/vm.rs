@@ -1,6 +1,6 @@
 use std::{
     cell::RefCell,
-    ops::Deref,
+    ops::{Deref, DerefMut},
     ptr,
     sync::atomic::{AtomicUsize, Ordering},
     thread::{current, Thread},
@@ -393,6 +393,12 @@ impl<'a> Deref for AttachGuard<'a> {
 
     fn deref(&self) -> &Self::Target {
         &self.env
+    }
+}
+
+impl<'a> DerefMut for AttachGuard<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.env
     }
 }
 
