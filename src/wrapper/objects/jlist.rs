@@ -1,6 +1,6 @@
 use crate::{
     errors::*,
-    objects::{JMethodID, JObject, JValueRef},
+    objects::{JMethodID, JObject, JValue},
     signature::{Primitive, ReturnType},
     sys::jint,
     JNIEnv,
@@ -65,7 +65,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
                 self.internal,
                 self.get,
                 ReturnType::Object,
-                &[JValueRef::from(idx).as_jni()],
+                &[JValue::from(idx).as_jni()],
             )
         };
 
@@ -87,7 +87,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
                 self.internal,
                 self.add,
                 ReturnType::Primitive(Primitive::Boolean),
-                &[JValueRef::from(value).as_jni()],
+                &[JValue::from(value).as_jni()],
             )
         };
 
@@ -104,7 +104,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
                 self.internal,
                 self.add_idx,
                 ReturnType::Primitive(Primitive::Void),
-                &[JValueRef::from(idx).as_jni(), JValueRef::from(value).as_jni()],
+                &[JValue::from(idx).as_jni(), JValue::from(value).as_jni()],
             )
         };
 
@@ -121,7 +121,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
                 self.internal,
                 self.remove,
                 ReturnType::Object,
-                &[JValueRef::from(idx).as_jni()],
+                &[JValue::from(idx).as_jni()],
             )
         };
 
@@ -165,7 +165,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
                 self.internal,
                 self.remove,
                 ReturnType::Object,
-                &[JValueRef::from(size - 1).as_jni()],
+                &[JValue::from(size - 1).as_jni()],
             )
         };
 

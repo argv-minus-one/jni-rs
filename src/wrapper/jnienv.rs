@@ -16,7 +16,7 @@ use crate::{
     objects::{
         AutoArray, AutoLocal, AutoPrimitiveArray, GlobalRef, JByteBuffer, JClass, JFieldID, JList,
         JMap, JMethodID, JObject, JStaticFieldID, JStaticMethodID, JString, JThrowable, JValue,
-        JValueOwned, JValueRef, ReleaseMode, TypeArray, WeakRef,
+        JValueOwned, ReleaseMode, TypeArray, WeakRef,
     },
     signature::{JavaType, Primitive, TypeSignature},
     strings::{JNIString, JavaStr},
@@ -1050,7 +1050,7 @@ impl<'a> JNIEnv<'a> {
                         method_id,
                         jni_args
                     );
-                    return Ok(JValue::Void);
+                    return Ok(JValueOwned::Void);
                 }
             }, // JavaType::Primitive
         }) // match parsed.ret
@@ -1127,7 +1127,7 @@ impl<'a> JNIEnv<'a> {
                 }
                 Primitive::Void => {
                     jni_void_call!(self.internal, CallVoidMethodA, obj, method_id, jni_args);
-                    return Ok(JValue::Void);
+                    return Ok(JValueOwned::Void);
                 }
             }, // JavaType::Primitive
         }) // match parsed.ret
@@ -1151,7 +1151,7 @@ impl<'a> JNIEnv<'a> {
         obj: O,
         name: S,
         sig: T,
-        args: &[JValueRef],
+        args: &[JValue],
     ) -> Result<JValueOwned<'a>>
     where
         O: AsRef<JObject<'b>>,
@@ -1210,7 +1210,7 @@ impl<'a> JNIEnv<'a> {
         class: T,
         name: U,
         sig: V,
-        args: &[JValueRef],
+        args: &[JValue],
     ) -> Result<JValueOwned<'a>>
     where
         T: Desc<'a, JClass<'c>>,
@@ -1256,7 +1256,7 @@ impl<'a> JNIEnv<'a> {
         &mut self,
         class: T,
         ctor_sig: U,
-        ctor_args: &[JValueRef],
+        ctor_args: &[JValue],
     ) -> Result<JObject<'a>>
     where
         T: Desc<'a, JClass<'c>>,
@@ -1987,7 +1987,7 @@ impl<'a> JNIEnv<'a> {
     }
 
     /// Set a field without any type checking.
-    pub fn set_field_unchecked<'b, O, T>(&mut self, obj: O, field: T, val: JValueRef) -> Result<()>
+    pub fn set_field_unchecked<'b, O, T>(&mut self, obj: O, field: T, val: JValue) -> Result<()>
     where
         O: AsRef<JObject<'b>>,
         T: Desc<'a, JFieldID>,
@@ -2056,7 +2056,7 @@ impl<'a> JNIEnv<'a> {
 
     /// Set a field. Does the same lookups as `get_field` and ensures that the
     /// type matches the given value.
-    pub fn set_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T, val: JValueRef) -> Result<()>
+    pub fn set_field<'b, O, S, T>(&mut self, obj: O, name: S, ty: T, val: JValue) -> Result<()>
     where
         O: AsRef<JObject<'b>>,
         S: Into<JNIString>,
@@ -2163,7 +2163,7 @@ impl<'a> JNIEnv<'a> {
     }
 
     /// Set a static field. Requires a class lookup and a field id lookup internally.
-    pub fn set_static_field<'c, T, U>(&mut self, class: T, field: U, value: JValueRef) -> Result<()>
+    pub fn set_static_field<'c, T, U>(&mut self, class: T, field: U, value: JValue) -> Result<()>
     where
         T: Desc<'a, JClass<'c>>,
         U: Desc<'a, JStaticFieldID>,
