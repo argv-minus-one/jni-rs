@@ -46,7 +46,7 @@ pub type JValueOwned<'a> = JValueGen<JObject<'a>>;
 /// This type is used for parameters passed to Java method calls. If the Java
 /// method is to be passed an object reference, it takes the form of a borrowed
 /// <code>&[JObject]</code>.
-pub type JValue<'a: 'b, 'b> = JValueGen<&'b JObject<'a>>;
+pub type JValue<'a, 'b> = JValueGen<&'b JObject<'a>>;
 
 impl<O> JValueGen<O> {
     /// Convert the enum to its jni-compatible equivalent.
