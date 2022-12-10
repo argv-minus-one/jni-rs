@@ -1,6 +1,5 @@
 use std::convert::TryFrom;
 use std::fmt::Debug;
-use std::mem::transmute;
 
 use log::trace;
 
@@ -56,7 +55,7 @@ impl<O> JValueGen<O> {
     {
         let val: jvalue = match self {
             JValueGen::Object(obj) => jvalue {
-                l: unsafe { transmute(obj) },
+                l: obj.as_ref().as_raw(),
             },
             JValueGen::Byte(byte) => jvalue { b: *byte },
             JValueGen::Char(char) => jvalue { c: *char },
