@@ -2105,39 +2105,39 @@ impl<'a> JNIEnv<'a> {
     {
         use JavaType::Primitive as JP;
 
-        let class = class.lookup(self)?.as_ref().as_raw();
-        let field = field.lookup(self)?.as_ref().into_raw();
+        let class = class.lookup(self)?;
+        let field = field.lookup(self)?;
 
         let result = match ty {
             JavaType::Object(_) | JavaType::Array(_) => {
-                let obj = jni_non_void_call!(self.internal, GetStaticObjectField, class, field);
+                let obj = jni_non_void_call!(self.internal, GetStaticObjectField, class.as_ref().as_raw(), field.as_ref().into_raw());
                 let obj = unsafe { JObject::from_raw(obj) };
                 obj.into()
             }
             JavaType::Method(_) => return Err(Error::WrongJValueType("Method", "see java field")),
             JP(Primitive::Boolean) => {
-                jni_unchecked!(self.internal, GetStaticBooleanField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticBooleanField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Char) => {
-                jni_unchecked!(self.internal, GetStaticCharField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticCharField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Short) => {
-                jni_unchecked!(self.internal, GetStaticShortField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticShortField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Int) => {
-                jni_unchecked!(self.internal, GetStaticIntField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticIntField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Long) => {
-                jni_unchecked!(self.internal, GetStaticLongField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticLongField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Float) => {
-                jni_unchecked!(self.internal, GetStaticFloatField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticFloatField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Double) => {
-                jni_unchecked!(self.internal, GetStaticDoubleField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticDoubleField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Byte) => {
-                jni_unchecked!(self.internal, GetStaticByteField, class, field).into()
+                jni_unchecked!(self.internal, GetStaticByteField, class.as_ref().as_raw(), field.as_ref().into_raw()).into()
             }
             JP(Primitive::Void) => return Err(Error::WrongJValueType("void", "see java field")),
         };
@@ -2154,12 +2154,11 @@ impl<'a> JNIEnv<'a> {
     {
         let ty = JavaType::from_str(sig.as_ref())?;
 
-        // go ahead and look up the class since it's already Copy,
-        // and we'll need that for the next call.
+        // go ahead and look up the class sincewe'll need that for the next
+        // call.
         let class = class.lookup(self)?;
-        let class = class.as_ref();
 
-        self.get_static_field_unchecked(class, (class, field, sig), ty)
+        self.get_static_field_unchecked(class.as_ref(), (class.as_ref(), field, sig), ty)
     }
 
     /// Set a static field. Requires a class lookup and a field id lookup internally.
@@ -2168,28 +2167,28 @@ impl<'a> JNIEnv<'a> {
         T: Desc<'a, JClass<'c>>,
         U: Desc<'a, JStaticFieldID>,
     {
-        let class = class.lookup(self)?.as_ref().as_raw();
-        let field = field.lookup(self)?.as_ref().into_raw();
+        let class = class.lookup(self)?;
+        let field = field.lookup(self)?;
 
         match value {
             JValue::Object(v) => jni_unchecked!(
                 self.internal,
                 SetStaticObjectField,
-                class,
-                field,
+                class.as_ref().as_raw(),
+                field.as_ref().into_raw(),
                 v.as_raw()
             ),
-            JValue::Byte(v) => jni_unchecked!(self.internal, SetStaticByteField, class, field, v),
-            JValue::Char(v) => jni_unchecked!(self.internal, SetStaticCharField, class, field, v),
-            JValue::Short(v) => jni_unchecked!(self.internal, SetStaticShortField, class, field, v),
-            JValue::Int(v) => jni_unchecked!(self.internal, SetStaticIntField, class, field, v),
-            JValue::Long(v) => jni_unchecked!(self.internal, SetStaticLongField, class, field, v),
+            JValue::Byte(v) => jni_unchecked!(self.internal, SetStaticByteField, class.as_ref().as_raw(), field.as_ref().into_raw(), v),
+            JValue::Char(v) => jni_unchecked!(self.internal, SetStaticCharField, class.as_ref().as_raw(), field.as_ref().into_raw(), v),
+            JValue::Short(v) => jni_unchecked!(self.internal, SetStaticShortField, class.as_ref().as_raw(), field.as_ref().into_raw(), v),
+            JValue::Int(v) => jni_unchecked!(self.internal, SetStaticIntField, class.as_ref().as_raw(), field.as_ref().into_raw(), v),
+            JValue::Long(v) => jni_unchecked!(self.internal, SetStaticLongField, class.as_ref().as_raw(), field.as_ref().into_raw(), v),
             JValue::Bool(v) => {
-                jni_unchecked!(self.internal, SetStaticBooleanField, class, field, v)
+                jni_unchecked!(self.internal, SetStaticBooleanField, class.as_ref().as_raw(), field.as_ref().into_raw(), v)
             }
-            JValue::Float(v) => jni_unchecked!(self.internal, SetStaticFloatField, class, field, v),
+            JValue::Float(v) => jni_unchecked!(self.internal, SetStaticFloatField, class.as_ref().as_raw(), field.as_ref().into_raw(), v),
             JValue::Double(v) => {
-                jni_unchecked!(self.internal, SetStaticDoubleField, class, field, v)
+                jni_unchecked!(self.internal, SetStaticDoubleField, class.as_ref().as_raw(), field.as_ref().into_raw(), v)
             }
             JValue::Void => return Err(Error::WrongJValueType("void", "?")),
         }
