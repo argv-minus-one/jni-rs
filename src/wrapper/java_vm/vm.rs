@@ -95,7 +95,7 @@ use {
 /// //
 /// // This method returns the guard that will detach the current thread when dropped,
 /// // also freeing any local references created in it
-/// let env = jvm.attach_current_thread()?;
+/// let mut env = jvm.attach_current_thread()?;
 ///
 /// // Call Java Math#abs(-10)
 /// let x = JValue::from(-10);

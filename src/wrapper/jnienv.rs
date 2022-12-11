@@ -588,18 +588,20 @@ impl<'a> JNIEnv<'a> {
     ///                 // `new_local_ref` to create a local reference that will outlive the
     ///                 // `GlobalRef`.
     ///
-    ///                 env.new_local_ref(exception.as_obj())?
+    ///                 env.new_local_ref(&exception)?
     ///             }
     ///
     ///             ExampleError::Other(error) => {
     ///                 // The error was caused by something that happened in Rust code. Create a
     ///                 // new `java.lang.Error` to represent it.
     ///
+    ///                 let error_string = env.new_string(error.to_string())?;
+    ///
     ///                 env.new_object(
     ///                     "java/lang/Error",
     ///                     "(Ljava/lang/String;)V",
     ///                     &[
-    ///                         env.new_string(error.to_string())?.into(),
+    ///                         (&error_string).into(),
     ///                     ],
     ///                 )?
     ///             }
