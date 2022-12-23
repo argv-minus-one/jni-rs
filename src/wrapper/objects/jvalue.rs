@@ -188,28 +188,22 @@ impl<O> JValueGen<O> {
         }
     }
 
-    // Preserve the table formatting in the next function.
-    //
-    // I'd prefer to apply this attribute only to the `match` expression
-    // inside, but non-built-in attributes on expressions are currently
-    // experimental, so I can't.
-    #[rustfmt::skip]
     /// Copies or borrows the value in this `JValue`.
     ///
     /// If the value is a primitive type, it is copied. If the value is an
     /// object reference, it is borrowed.
     pub fn borrow<'a>(&'a self) -> JValueGen<&'a O> {
         match self {
-            JValueGen::Object(o) => JValueGen::Object(o ),
-            JValueGen::Byte  (v) => JValueGen::Byte  (*v),
-            JValueGen::Char  (v) => JValueGen::Char  (*v),
-            JValueGen::Short (v) => JValueGen::Short (*v),
-            JValueGen::Int   (v) => JValueGen::Int   (*v),
-            JValueGen::Long  (v) => JValueGen::Long  (*v),
-            JValueGen::Bool  (v) => JValueGen::Bool  (*v),
-            JValueGen::Float (v) => JValueGen::Float (*v),
+            JValueGen::Object(o) => JValueGen::Object(o),
+            JValueGen::Byte(v) => JValueGen::Byte(*v),
+            JValueGen::Char(v) => JValueGen::Char(*v),
+            JValueGen::Short(v) => JValueGen::Short(*v),
+            JValueGen::Int(v) => JValueGen::Int(*v),
+            JValueGen::Long(v) => JValueGen::Long(*v),
+            JValueGen::Bool(v) => JValueGen::Bool(*v),
+            JValueGen::Float(v) => JValueGen::Float(*v),
             JValueGen::Double(v) => JValueGen::Double(*v),
-            JValueGen::Void      => JValueGen::Void      ,
+            JValueGen::Void => JValueGen::Void,
         }
     }
 }
