@@ -719,11 +719,11 @@ impl<'a> JNIEnv<'a> {
     /// and `AutoLocal` type - that approach can be more convenient in loops.
     pub fn with_local_frame<F>(&mut self, capacity: i32, f: F) -> Result<JObject<'a>>
     where
-        F: for<'b> FnOnce(JNIEnv<'b>) -> Result<JObject<'b>>,
+        F: for<'b> FnOnce(&mut JNIEnv<'b>) -> Result<JObject<'b>>,
     {
         unsafe {
             self.push_local_frame(capacity)?;
-            let res = f(self.unsafe_clone());
+            let res = f(self);
             match res {
                 Ok(obj) => self.pop_local_frame(&obj),
                 Err(e) => {

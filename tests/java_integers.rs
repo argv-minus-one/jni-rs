@@ -12,7 +12,7 @@ fn test_java_integers() {
     let array_length = 50;
 
     for value in -10..10 {
-        env.with_local_frame(16, |mut env| {
+        env.with_local_frame(16, |env| {
             let integer_value =
                 env.new_object("java/lang/Integer", "(I)V", &[JValue::Int(value)])?;
 

@@ -961,7 +961,7 @@ fn short_lifetime_with_local_frame() {
 }
 
 fn short_lifetime_with_local_frame_sub_fn<'a>(env: &'_ mut JNIEnv<'a>) -> Result<JObject<'a>, Error> {
-    env.with_local_frame(16, |mut env| {
+    env.with_local_frame(16, |env| {
         env.new_object(INTEGER_CLASS, "(I)V", &[JValue::from(5)])
     })
 }

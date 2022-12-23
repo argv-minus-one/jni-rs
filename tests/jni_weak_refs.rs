@@ -96,7 +96,7 @@ fn weak_ref_is_actually_weak() {
 
     fn run_gc(env: &mut JNIEnv) {
         unwrap(
-            env.with_local_frame(1, |mut env| {
+            env.with_local_frame(1, |env| {
                 env.call_static_method("java/lang/System", "gc", "()V", &[])?;
                 Ok(JObject::null())
             }),
@@ -106,7 +106,7 @@ fn weak_ref_is_actually_weak() {
 
     for _ in 0..100 {
         let obj_local = unwrap(
-            env.with_local_frame(2, |mut env| env.new_object("java/lang/Object", "()V", &[])),
+            env.with_local_frame(2, |env| env.new_object("java/lang/Object", "()V", &[])),
             &env,
         );
         let obj_local = env.auto_local(obj_local);
