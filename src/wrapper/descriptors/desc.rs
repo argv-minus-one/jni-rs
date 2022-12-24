@@ -16,54 +16,54 @@ use crate::objects::{JClass, JMethodID};
 /// the [`JClass`] of a class other than the one requested. Returning such an
 /// incorrect value results in undefined behavior. This requirement also
 /// applies to the returned value's implementation of `AsRef<T>`.
-pub unsafe trait Desc<'a, T> {
+pub unsafe trait Desc<'local, T> {
     /// The type that this `Desc` returns.
     type Output: AsRef<T>;
 
     /// Look up the concrete type from the JVM.
-    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<Self::Output>;
+    fn lookup(self, _: &mut JNIEnv<'local>) -> Result<Self::Output>;
 }
 
-unsafe impl<'a, T> Desc<'a, T> for T
+unsafe impl<'local, T> Desc<'local, T> for T
 where
     T: AsRef<T>,
 {
     type Output = Self;
 
-    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<T> {
+    fn lookup(self, _: &mut JNIEnv<'local>) -> Result<T> {
         Ok(self)
     }
 }
 
-unsafe impl<'a, 'b, T> Desc<'a, T> for &'b T
+unsafe impl<'local, 't_ref, T> Desc<'local, T> for &'t_ref T
 where
     T: AsRef<T>,
 {
     type Output = Self;
 
-    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<Self::Output> {
+    fn lookup(self, _: &mut JNIEnv<'local>) -> Result<Self::Output> {
         Ok(self)
     }
 }
 
-unsafe impl<'a, 'a2, T> Desc<'a, T> for AutoLocal<'a2, T>
+unsafe impl<'local, 'other_local, T> Desc<'local, T> for AutoLocal<'other_local, T>
 where
-    T: AsRef<T> + Into<JObject<'a2>>,
+    T: AsRef<T> + Into<JObject<'other_local>>,
 {
     type Output = Self;
 
-    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<Self::Output> {
+    fn lookup(self, _: &mut JNIEnv<'local>) -> Result<Self::Output> {
         Ok(self)
     }
 }
 
-unsafe impl<'a, 'a2, 'b, T> Desc<'a, T> for &'b AutoLocal<'a2, T>
+unsafe impl<'local, 'other_local, 'obj_ref, T> Desc<'local, T> for &'obj_ref AutoLocal<'other_local, T>
 where
-    T: AsRef<T> + Into<JObject<'a2>>,
+    T: AsRef<T> + Into<JObject<'other_local>>,
 {
     type Output = Self;
 
-    fn lookup(self, _: &mut JNIEnv<'a>) -> Result<Self::Output> {
+    fn lookup(self, _: &mut JNIEnv<'local>) -> Result<Self::Output> {
         Ok(self)
     }
 }

@@ -67,7 +67,7 @@ impl WeakRef {
     ///
     /// If this method returns `Ok(Some(r))`, it is guaranteed that the object will not be garbage
     /// collected at least until `r` is deleted or becomes invalid.
-    pub fn upgrade_local<'e>(&self, env: &JNIEnv<'e>) -> Result<Option<JObject<'e>>> {
+    pub fn upgrade_local<'local>(&self, env: &JNIEnv<'local>) -> Result<Option<JObject<'local>>> {
         let r = env.new_local_ref(unsafe { JObject::from_raw(self.as_raw()) })?;
 
         // Per JNI spec, `NewLocalRef` will return a null pointer if the object was GC'd.
@@ -121,9 +121,9 @@ impl WeakRef {
     /// [`WeakRef::is_garbage_collected`]: it returns true if the object referred to by this
     /// `WeakRef` has been garbage collected, or false if the object has not yet been garbage
     /// collected.
-    pub fn is_same_object<'a, O>(&self, env: &JNIEnv<'a>, object: O) -> Result<bool>
+    pub fn is_same_object<'local, O>(&self, env: &JNIEnv<'local>, object: O) -> Result<bool>
     where
-        O: AsRef<JObject<'a>>,
+        O: AsRef<JObject<'local>>,
     {
         env.is_same_object(unsafe { JObject::from_raw(self.as_raw()) }, object)
     }

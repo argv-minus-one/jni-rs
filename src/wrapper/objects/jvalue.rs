@@ -38,20 +38,20 @@ pub enum JValueGen<O> {
 /// This type is used for values returned from Java method calls. If the Java
 /// method returns an object reference, it will take the form of an owned
 /// [`JObject`].
-pub type JValueOwned<'a> = JValueGen<JObject<'a>>;
+pub type JValueOwned<'local> = JValueGen<JObject<'local>>;
 
 /// A <dfn>reference</dfn> [`JValueGen`].
 ///
 /// This type is used for parameters passed to Java method calls. If the Java
 /// method is to be passed an object reference, it takes the form of a borrowed
 /// <code>&[JObject]</code>.
-pub type JValue<'a, 'b> = JValueGen<&'b JObject<'a>>;
+pub type JValue<'local, 'obj_ref> = JValueGen<&'obj_ref JObject<'local>>;
 
 impl<O> JValueGen<O> {
     /// Convert the enum to its jni-compatible equivalent.
-    pub fn as_jni<'a>(&self) -> jvalue
+    pub fn as_jni<'local>(&self) -> jvalue
     where
-        O: AsRef<JObject<'a>> + Debug,
+        O: AsRef<JObject<'local>> + Debug,
     {
         let val: jvalue = match self {
             JValueGen::Object(obj) => jvalue {
@@ -192,7 +192,7 @@ impl<O> JValueGen<O> {
     ///
     /// If the value is a primitive type, it is copied. If the value is an
     /// object reference, it is borrowed.
-    pub fn borrow<'a>(&'a self) -> JValueGen<&'a O> {
+    pub fn borrow<'obj_ref>(&'obj_ref self) -> JValueGen<&'obj_ref O> {
         match self {
             JValueGen::Object(o) => JValueGen::Object(o),
             JValueGen::Byte(v) => JValueGen::Byte(*v),
@@ -208,28 +208,28 @@ impl<O> JValueGen<O> {
     }
 }
 
-impl<'a, O> From<&'a JValueGen<O>> for JValueGen<&'a O> {
-    fn from(other: &'a JValueGen<O>) -> Self {
+impl<'obj_ref, O> From<&'obj_ref JValueGen<O>> for JValueGen<&'obj_ref O> {
+    fn from(other: &'obj_ref JValueGen<O>) -> Self {
         other.borrow()
     }
 }
 
-impl<'a, T: Into<JObject<'a>>> From<T> for JValueOwned<'a> {
+impl<'local, T: Into<JObject<'local>>> From<T> for JValueOwned<'local> {
     fn from(other: T) -> Self {
         Self::Object(other.into())
     }
 }
 
-impl<'a: 'b, 'b, T: AsRef<JObject<'a>>> From<&'b T> for JValue<'a, 'b> {
-    fn from(other: &'b T) -> Self {
+impl<'local: 'obj_ref, 'obj_ref, T: AsRef<JObject<'local>>> From<&'obj_ref T> for JValue<'local, 'obj_ref> {
+    fn from(other: &'obj_ref T) -> Self {
         Self::Object(other.as_ref())
     }
 }
 
-impl<'a> TryFrom<JValueOwned<'a>> for JObject<'a> {
+impl<'local> TryFrom<JValueOwned<'local>> for JObject<'local> {
     type Error = Error;
 
-    fn try_from(value: JValueOwned<'a>) -> Result<Self> {
+    fn try_from(value: JValueOwned<'local>) -> Result<Self> {
         match value {
             JValueGen::Object(o) => Ok(o),
             _ => Err(Error::WrongJValueType("object", value.type_name())),

@@ -12,31 +12,31 @@ use std::marker::PhantomData;
 ///
 /// Looks up the class and method ids on creation rather than for every method
 /// call.
-pub struct JMap<'a: 'b, 'b> {
-    internal: &'b JObject<'a>,
-    class: AutoLocal<'a, JClass<'a>>,
+pub struct JMap<'local: 'obj_ref, 'obj_ref> {
+    internal: &'obj_ref JObject<'local>,
+    class: AutoLocal<'local, JClass<'local>>,
     get: JMethodID,
     put: JMethodID,
     remove: JMethodID,
 }
 
-impl<'a: 'b, 'b> AsRef<JMap<'a, 'b>> for JMap<'a, 'b> {
-    fn as_ref(&self) -> &JMap<'a, 'b> {
+impl<'local: 'obj_ref, 'obj_ref> AsRef<JMap<'local, 'obj_ref>> for JMap<'local, 'obj_ref> {
+    fn as_ref(&self) -> &JMap<'local, 'obj_ref> {
         self
     }
 }
 
-impl<'a: 'b, 'b> AsRef<JObject<'a>> for JMap<'a, 'b> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local: 'obj_ref, 'obj_ref> AsRef<JObject<'local>> for JMap<'local, 'obj_ref> {
+    fn as_ref(&self) -> &JObject<'local> {
         self.internal
     }
 }
 
-impl<'a: 'b, 'b> JMap<'a, 'b> {
+impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
-    pub fn from_env(env: &mut JNIEnv<'a>, obj: &'b JObject<'a>) -> Result<JMap<'a, 'b>> {
+    pub fn from_env(env: &mut JNIEnv<'local>, obj: &'obj_ref JObject<'local>) -> Result<JMap<'local, 'obj_ref>> {
         let class = AutoLocal::new(env.find_class("java/util/Map")?, env);
 
         let get = env.get_method_id(&class, "get", "(Ljava/lang/Object;)Ljava/lang/Object;")?;
@@ -61,7 +61,7 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
 
     /// Look up the value for a key. Returns `Some` if it's found and `None` if
     /// a null pointer would be returned.
-    pub fn get<'a2>(&self, env: &mut JNIEnv<'a2>, key: &JObject) -> Result<Option<JObject<'a2>>> {
+    pub fn get<'other_local>(&self, env: &mut JNIEnv<'other_local>, key: &JObject) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -84,7 +84,7 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
 
     /// Look up the value for a key. Returns `Some` with the old value if the
     /// key already existed and `None` if it's a new key.
-    pub fn put<'a2>(&self, env: &mut JNIEnv<'a2>, key: &JObject, value: &JObject) -> Result<Option<JObject<'a2>>> {
+    pub fn put<'other_local>(&self, env: &mut JNIEnv<'other_local>, key: &JObject, value: &JObject) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -107,7 +107,7 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
 
     /// Remove a value from the map. Returns `Some` with the removed value and
     /// `None` if there was no value for the key.
-    pub fn remove<'a2>(&self, env: &mut JNIEnv<'a2>, key: &JObject) -> Result<Option<JObject<'a2>>> {
+    pub fn remove<'other_local>(&self, env: &mut JNIEnv<'other_local>, key: &JObject) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -130,7 +130,7 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
 
     /// Get key/value iterator for the map. This is done by getting the
     /// `EntrySet` from java and iterating over it.
-    pub fn iter<'map, 'iter>(&'map self, env: &mut JNIEnv<'iter>) -> Result<JMapIter<'map, 'a, 'b, 'iter>> {
+    pub fn iter<'map, 'iter_local>(&'map self, env: &mut JNIEnv<'iter_local>) -> Result<JMapIter<'map, 'local, 'obj_ref, 'iter_local>> {
         let iter_class = AutoLocal::new(env.find_class("java/util/Iterator")?, env);
 
         let has_next = env.get_method_id(&iter_class, "hasNext", "()Z")?;
@@ -191,16 +191,16 @@ impl<'a: 'b, 'b> JMap<'a, 'b> {
 ///
 /// TODO: make the iterator implementation for java iterators its own thing
 /// and generic enough to use elsewhere.
-pub struct JMapIter<'map, 'a: 'b, 'b, 'iter> {
-    _phantom_map: PhantomData<&'map JMap<'a, 'b>>,
+pub struct JMapIter<'map, 'local: 'obj_ref, 'obj_ref, 'iter_local> {
+    _phantom_map: PhantomData<&'map JMap<'local, 'obj_ref>>,
     has_next: JMethodID,
     next: JMethodID,
     get_key: JMethodID,
     get_value: JMethodID,
-    iter: AutoLocal<'iter, JObject<'iter>>,
+    iter: AutoLocal<'iter_local, JObject<'iter_local>>,
 }
 
-impl<'map, 'a: 'b, 'b, 'iter> JMapIter<'map, 'a, 'b, 'iter> {
+impl<'map, 'local: 'obj_ref, 'obj_ref, 'iter_local> JMapIter<'map, 'local, 'obj_ref, 'iter_local> {
     /// Advances the iterator and returns the next key-value pair in the
     /// `java.util.Map`, or `None` if there are no more objects.
     ///
@@ -213,7 +213,7 @@ impl<'map, 'a: 'b, 'b, 'iter> JMapIter<'map, 'a, 'b, 'iter> {
     ///
     /// This is like [`Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
-    pub fn next<'a2>(&mut self, env: &mut JNIEnv<'a2>) -> Result<Option<(JObject<'a2>, JObject<'a2>)>> {
+    pub fn next<'other_local>(&mut self, env: &mut JNIEnv<'other_local>) -> Result<Option<(JObject<'other_local>, JObject<'other_local>)>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for these functions. We know none expect args.
 
         let has_next = unsafe {

@@ -24,27 +24,27 @@ use crate::{objects::JObject, JNIEnv};
 /// [spec-references]: https://docs.oracle.com/en/java/javase/12/docs/specs/jni/design.html#referencing-java-objects
 /// [android-jni-references]: https://developer.android.com/training/articles/perf-jni#local-and-global-references
 #[derive(Debug)]
-pub struct AutoLocal<'a, T>
+pub struct AutoLocal<'local, T>
 where
-    T: Into<JObject<'a>>,
+    T: Into<JObject<'local>>,
 {
     obj: ManuallyDrop<T>,
-    env: JNIEnv<'a>,
+    env: JNIEnv<'local>,
 }
 
-impl<'a, T> AutoLocal<'a, T>
+impl<'local, T> AutoLocal<'local, T>
 where
     // Note that this bound prevents `AutoLocal` from wrapping a `GlobalRef`, which implements
     // `AsRef<JObject<'static>>` but *not* `Into<JObject<'static>>`. This is good, because trying
     // to delete a global reference as though it were local would cause undefined behavior.
-    T: Into<JObject<'a>>,
+    T: Into<JObject<'local>>,
 {
     /// Creates a new auto-delete wrapper for a local ref.
     ///
     /// Once this wrapper goes out of scope, the `delete_local_ref` will be
     /// called on the object. While wrapped, the object can be accessed via
     /// the `Deref` impl.
-    pub fn new(obj: T, env: &JNIEnv<'a>) -> Self {
+    pub fn new(obj: T, env: &JNIEnv<'local>) -> Self {
         // Safety: The cloned `JNIEnv` will not be used to create any local references, only to
         // delete one.
         let env = unsafe { env.unsafe_clone() };
@@ -91,9 +91,9 @@ where
     }
 }
 
-impl<'a, T> Drop for AutoLocal<'a, T>
+impl<'local, T> Drop for AutoLocal<'local, T>
 where
-    T: Into<JObject<'a>>,
+    T: Into<JObject<'local>>,
 {
     fn drop(&mut self) {
         // Extract the local reference from `self.obj` so that we can delete it.
@@ -114,27 +114,27 @@ where
     }
 }
 
-impl<'a, T, U> AsRef<U> for AutoLocal<'a, T>
+impl<'local, T, U> AsRef<U> for AutoLocal<'local, T>
 where
-    T: AsRef<U> + Into<JObject<'a>>,
+    T: AsRef<U> + Into<JObject<'local>>,
 {
     fn as_ref(&self) -> &U {
         self.obj.as_ref()
     }
 }
 
-impl<'a, T, U> AsMut<U> for AutoLocal<'a, T>
+impl<'local, T, U> AsMut<U> for AutoLocal<'local, T>
 where
-    T: AsMut<U> + Into<JObject<'a>>,
+    T: AsMut<U> + Into<JObject<'local>>,
 {
     fn as_mut(&mut self) -> &mut U {
         self.obj.as_mut()
     }
 }
 
-impl<'a, T> Deref for AutoLocal<'a, T>
+impl<'local, T> Deref for AutoLocal<'local, T>
 where
-    T: Into<JObject<'a>>,
+    T: Into<JObject<'local>>,
 {
     type Target = T;
 
@@ -143,9 +143,9 @@ where
     }
 }
 
-impl<'a, T> DerefMut for AutoLocal<'a, T>
+impl<'local, T> DerefMut for AutoLocal<'local, T>
 where
-    T: Into<JObject<'a>>,
+    T: Into<JObject<'local>>,
 {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.obj

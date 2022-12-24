@@ -960,7 +960,7 @@ fn short_lifetime_with_local_frame() {
     assert!(object.is_ok());
 }
 
-fn short_lifetime_with_local_frame_sub_fn<'a>(env: &'_ mut JNIEnv<'a>) -> Result<JObject<'a>, Error> {
+fn short_lifetime_with_local_frame_sub_fn<'local>(env: &'_ mut JNIEnv<'local>) -> Result<JObject<'local>, Error> {
     env.with_local_frame(16, |env| {
         env.new_object(INTEGER_CLASS, "(I)V", &[JValue::from(5)])
     })
@@ -974,7 +974,7 @@ fn short_lifetime_list() {
     assert_eq!(value.unwrap().i().unwrap(), 1);
 }
 
-fn short_lifetime_list_sub_fn<'a>(env: &'_ mut JNIEnv<'a>) -> Result<JObject<'a>, Error> {
+fn short_lifetime_list_sub_fn<'local>(env: &'_ mut JNIEnv<'local>) -> Result<JObject<'local>, Error> {
     let list_object = env.new_object(ARRAYLIST_CLASS, "()V", &[])?;
     let list = JList::from_env(env, &list_object)?;
     let element = env.new_object(INTEGER_CLASS, "(I)V", &[JValue::from(1)])?;
@@ -982,10 +982,10 @@ fn short_lifetime_list_sub_fn<'a>(env: &'_ mut JNIEnv<'a>) -> Result<JObject<'a>
     short_lifetime_list_sub_fn_get_first_element(env, &list)
 }
 
-fn short_lifetime_list_sub_fn_get_first_element<'a>(
-    env: &'_ mut JNIEnv<'a>,
-    list: &'_ JList<'a, '_>,
-) -> Result<JObject<'a>, Error> {
+fn short_lifetime_list_sub_fn_get_first_element<'local>(
+    env: &'_ mut JNIEnv<'local>,
+    list: &'_ JList<'local, '_>,
+) -> Result<JObject<'local>, Error> {
     let mut iterator = list.iter(env)?;
     Ok(iterator.next(env)?.unwrap())
 }
@@ -1078,9 +1078,9 @@ pub fn test_invalid_list_get_string() {
     assert!(ret.is_err());
 }
 
-fn test_throwable_descriptor_with_default_type<'a, D>(env: &mut JNIEnv<'a>, descriptor: D)
+fn test_throwable_descriptor_with_default_type<'local, D>(env: &mut JNIEnv<'local>, descriptor: D)
 where
-    D: Desc<'a, JThrowable<'a>>,
+    D: Desc<'local, JThrowable<'local>>,
 {
     let result = descriptor.lookup(env);
     assert!(result.is_ok());

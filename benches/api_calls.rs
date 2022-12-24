@@ -49,8 +49,8 @@ fn jni_hash_safe(env: &mut JNIEnv, obj: &JObject) -> jint {
     v.i().unwrap()
 }
 
-fn jni_local_date_time_of_safe<'e>(
-    env: &mut JNIEnv<'e>,
+fn jni_local_date_time_of_safe<'local>(
+    env: &mut JNIEnv<'local>,
     year: jint,
     month: jint,
     day_of_month: jint,
@@ -58,7 +58,7 @@ fn jni_local_date_time_of_safe<'e>(
     minute: jint,
     second: jint,
     nanosecond: jint,
-) -> JObject<'e> {
+) -> JObject<'local> {
     let v = env
         .call_static_method(
             CLASS_LOCAL_DATE_TIME,
@@ -78,14 +78,14 @@ fn jni_local_date_time_of_safe<'e>(
     v.l().unwrap()
 }
 
-fn jni_int_call_static_unchecked<'c, C>(
-    env: &mut JNIEnv<'c>,
+fn jni_int_call_static_unchecked<'local, C>(
+    env: &mut JNIEnv<'local>,
     class: C,
     method_id: JStaticMethodID,
     x: jint,
 ) -> jint
 where
-    C: Desc<'c, JClass<'c>>,
+    C: Desc<'local, JClass<'local>>,
 {
     let x = JValue::from(x);
     let ret = ReturnType::Primitive(Primitive::Int);
@@ -94,9 +94,9 @@ where
     v.i().unwrap()
 }
 
-fn jni_int_call_unchecked<'m, M>(env: &mut JNIEnv<'m>, obj: &JObject<'m>, method_id: M) -> jint
+fn jni_int_call_unchecked<'local, M>(env: &mut JNIEnv<'local>, obj: &JObject<'local>, method_id: M) -> jint
 where
-    M: Desc<'m, JMethodID>,
+    M: Desc<'local, JMethodID>,
 {
     let ret = ReturnType::Primitive(Primitive::Int);
     // SAFETY: Caller retrieved method ID + class specifically for this use: Object.hashCode()I
@@ -104,14 +104,14 @@ where
     v.i().unwrap()
 }
 
-fn jni_object_call_static_unchecked<'c, C>(
-    env: &mut JNIEnv<'c>,
+fn jni_object_call_static_unchecked<'local, C>(
+    env: &mut JNIEnv<'local>,
     class: C,
     method_id: JStaticMethodID,
     args: &[jvalue],
-) -> JObject<'c>
+) -> JObject<'local>
 where
-    C: Desc<'c, JClass<'c>>,
+    C: Desc<'local, JClass<'local>>,
 {
     // SAFETY: Caller retrieved method ID and constructed arguments
     let v = unsafe { env.call_static_method_unchecked(class, method_id, ReturnType::Object, args) }

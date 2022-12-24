@@ -6,47 +6,47 @@ use crate::{
 /// Lifetime'd representation of a `jthrowable`. Just a `JObject` wrapped in a
 /// new class.
 #[repr(transparent)]
-pub struct JThrowable<'a>(JObject<'a>);
+pub struct JThrowable<'local>(JObject<'local>);
 
-impl<'a> AsRef<JThrowable<'a>> for JThrowable<'a> {
-    fn as_ref(&self) -> &JThrowable<'a> {
+impl<'local> AsRef<JThrowable<'local>> for JThrowable<'local> {
+    fn as_ref(&self) -> &JThrowable<'local> {
         self
     }
 }
 
-impl<'a> AsRef<JObject<'a>> for JThrowable<'a> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local> AsRef<JObject<'local>> for JThrowable<'local> {
+    fn as_ref(&self) -> &JObject<'local> {
         &**self
     }
 }
 
-impl<'a> ::std::ops::Deref for JThrowable<'a> {
-    type Target = JObject<'a>;
+impl<'local> ::std::ops::Deref for JThrowable<'local> {
+    type Target = JObject<'local>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<'a> From<JThrowable<'a>> for JObject<'a> {
+impl<'local> From<JThrowable<'local>> for JObject<'local> {
     fn from(other: JThrowable) -> JObject {
         other.0
     }
 }
 
-impl<'a> From<JObject<'a>> for JThrowable<'a> {
+impl<'local> From<JObject<'local>> for JThrowable<'local> {
     fn from(other: JObject) -> Self {
         unsafe { Self::from_raw(other.into_raw()) }
     }
 }
 
-impl<'a> std::default::Default for JThrowable<'a> {
+impl<'local> std::default::Default for JThrowable<'local> {
     fn default() -> Self {
         Self(JObject::null())
     }
 }
 
-impl<'a> JThrowable<'a> {
+impl<'local> JThrowable<'local> {
     /// Creates a [`JThrowable`] that wraps the given `raw` [`jthrowable`]
     ///
     /// # Safety

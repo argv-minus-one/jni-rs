@@ -73,16 +73,16 @@ type_array!(jdouble, GetDoubleArrayElements, ReleaseDoubleArrayElements);
 ///
 /// AutoArray provides automatic array release through a call to appropriate
 /// Release<Type>ArrayElements when it goes out of scope.
-pub struct AutoArray<'a, T: TypeArray> {
-    obj: JObject<'a>,
+pub struct AutoArray<'local, T: TypeArray> {
+    obj: JObject<'local>,
     ptr: NonNull<T>,
     mode: ReleaseMode,
     is_copy: bool,
-    env: JNIEnv<'a>,
+    env: JNIEnv<'local>,
 }
 
-impl<'a, T: TypeArray> AutoArray<'a, T> {
-    pub(crate) fn new(env: &mut JNIEnv<'a>, obj: JObject<'a>, mode: ReleaseMode) -> Result<Self> {
+impl<'local, T: TypeArray> AutoArray<'local, T> {
+    pub(crate) fn new(env: &mut JNIEnv<'local>, obj: JObject<'local>, mode: ReleaseMode) -> Result<Self> {
         // Safety: The cloned `JNIEnv` will not be used to create any local references. It will be
         // passed to the methods of the `TypeArray` implementation, but that trait is `unsafe` and
         // implementations are required to uphold the invariants of `unsafe_clone`.
@@ -142,19 +142,19 @@ impl<'a, T: TypeArray> AutoArray<'a, T> {
     }
 }
 
-impl<'a, T: TypeArray> AsRef<AutoArray<'a, T>> for AutoArray<'a, T> {
-    fn as_ref(&self) -> &AutoArray<'a, T> {
+impl<'local, T: TypeArray> AsRef<AutoArray<'local, T>> for AutoArray<'local, T> {
+    fn as_ref(&self) -> &AutoArray<'local, T> {
         self
     }
 }
 
-impl<'a, T: TypeArray> AsRef<JObject<'a>> for AutoArray<'a, T> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local, T: TypeArray> AsRef<JObject<'local>> for AutoArray<'local, T> {
+    fn as_ref(&self) -> &JObject<'local> {
         &self.obj
     }
 }
 
-impl<'a, T: TypeArray> Drop for AutoArray<'a, T> {
+impl<'local, T: TypeArray> Drop for AutoArray<'local, T> {
     fn drop(&mut self) {
         // Safety: `self.mode` is valid and the array has not yet been released.
         let res = unsafe { self.release_array_elements(self.mode as i32) };
@@ -166,8 +166,8 @@ impl<'a, T: TypeArray> Drop for AutoArray<'a, T> {
     }
 }
 
-impl<'a, T: TypeArray> From<&'a AutoArray<'a, T>> for *mut T {
-    fn from(other: &'a AutoArray<T>) -> *mut T {
+impl<'local, T: TypeArray> From<&'local AutoArray<'local, T>> for *mut T {
+    fn from(other: &'local AutoArray<T>) -> *mut T {
         other.as_ptr()
     }
 }

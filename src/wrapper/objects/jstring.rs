@@ -6,47 +6,47 @@ use crate::{
 /// Lifetime'd representation of a `jstring`. Just a `JObject` wrapped in a new
 /// class.
 #[repr(transparent)]
-pub struct JString<'a>(JObject<'a>);
+pub struct JString<'local>(JObject<'local>);
 
-impl<'a> AsRef<JString<'a>> for JString<'a> {
-    fn as_ref(&self) -> &JString<'a> {
+impl<'local> AsRef<JString<'local>> for JString<'local> {
+    fn as_ref(&self) -> &JString<'local> {
         self
     }
 }
 
-impl<'a> AsRef<JObject<'a>> for JString<'a> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local> AsRef<JObject<'local>> for JString<'local> {
+    fn as_ref(&self) -> &JObject<'local> {
         &**self
     }
 }
 
-impl<'a> ::std::ops::Deref for JString<'a> {
-    type Target = JObject<'a>;
+impl<'local> ::std::ops::Deref for JString<'local> {
+    type Target = JObject<'local>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<'a> From<JString<'a>> for JObject<'a> {
+impl<'local> From<JString<'local>> for JObject<'local> {
     fn from(other: JString) -> JObject {
         other.0
     }
 }
 
-impl<'a> From<JObject<'a>> for JString<'a> {
+impl<'local> From<JObject<'local>> for JString<'local> {
     fn from(other: JObject) -> Self {
         unsafe { Self::from_raw(other.into_raw()) }
     }
 }
 
-impl<'a> std::default::Default for JString<'a> {
+impl<'local> std::default::Default for JString<'local> {
     fn default() -> Self {
         Self(JObject::null())
     }
 }
 
-impl<'a> JString<'a> {
+impl<'local> JString<'local> {
     /// Creates a [`JString`] that wraps the given `raw` [`jstring`]
     ///
     /// # Safety

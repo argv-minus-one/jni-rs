@@ -7,48 +7,48 @@ use crate::{
 /// class.
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct JClass<'a>(JObject<'a>);
+pub struct JClass<'local>(JObject<'local>);
 
-impl<'a> AsRef<JClass<'a>> for JClass<'a> {
-    fn as_ref(&self) -> &JClass<'a> {
+impl<'local> AsRef<JClass<'local>> for JClass<'local> {
+    fn as_ref(&self) -> &JClass<'local> {
         self
     }
 }
 
-impl<'a> AsRef<JObject<'a>> for JClass<'a> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local> AsRef<JObject<'local>> for JClass<'local> {
+    fn as_ref(&self) -> &JObject<'local> {
         &**self
     }
 }
 
-impl<'a> ::std::ops::Deref for JClass<'a> {
-    type Target = JObject<'a>;
+impl<'local> ::std::ops::Deref for JClass<'local> {
+    type Target = JObject<'local>;
 
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
-impl<'a> From<JClass<'a>> for JObject<'a> {
+impl<'local> From<JClass<'local>> for JObject<'local> {
     fn from(other: JClass) -> JObject {
         other.0
     }
 }
 
 /// This conversion assumes that the `JObject` is a pointer to a class object.
-impl<'a> From<JObject<'a>> for JClass<'a> {
+impl<'local> From<JObject<'local>> for JClass<'local> {
     fn from(other: JObject) -> Self {
         unsafe { Self::from_raw(other.into_raw()) }
     }
 }
 
-impl<'a> std::default::Default for JClass<'a> {
+impl<'local> std::default::Default for JClass<'local> {
     fn default() -> Self {
         Self(JObject::null())
     }
 }
 
-impl<'a> JClass<'a> {
+impl<'local> JClass<'local> {
     /// Creates a [`JClass`] that wraps the given `raw` [`jclass`]
     ///
     /// # Safety

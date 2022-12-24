@@ -11,8 +11,8 @@ use crate::{
 ///
 /// Looks up the class and method ids on creation rather than for every method
 /// call.
-pub struct JList<'a: 'b, 'b> {
-    internal: &'b JObject<'a>,
+pub struct JList<'local: 'obj_ref, 'obj_ref> {
+    internal: &'obj_ref JObject<'local>,
     get: JMethodID,
     add: JMethodID,
     add_idx: JMethodID,
@@ -20,23 +20,23 @@ pub struct JList<'a: 'b, 'b> {
     size: JMethodID,
 }
 
-impl<'a: 'b, 'b> AsRef<JList<'a, 'b>> for JList<'a, 'b> {
-    fn as_ref(&self) -> &JList<'a, 'b> {
+impl<'local: 'obj_ref, 'obj_ref> AsRef<JList<'local, 'obj_ref>> for JList<'local, 'obj_ref> {
+    fn as_ref(&self) -> &JList<'local, 'obj_ref> {
         self
     }
 }
 
-impl<'a: 'b, 'b> AsRef<JObject<'a>> for JList<'a, 'b> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local: 'obj_ref, 'obj_ref> AsRef<JObject<'local>> for JList<'local, 'obj_ref> {
+    fn as_ref(&self) -> &JObject<'local> {
         self.internal
     }
 }
 
-impl<'a: 'b, 'b> JList<'a, 'b> {
+impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
-    pub fn from_env(env: &mut JNIEnv, obj: &'b JObject<'a>) -> Result<JList<'a, 'b>> {
+    pub fn from_env(env: &mut JNIEnv, obj: &'obj_ref JObject<'local>) -> Result<JList<'local, 'obj_ref>> {
         let class = AutoLocal::new(env.find_class("java/util/List")?, env);
 
         let get = env.get_method_id(&class, "get", "(I)Ljava/lang/Object;")?;
@@ -57,7 +57,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
 
     /// Look up the value for a key. Returns `Some` if it's found and `None` if
     /// a null pointer would be returned.
-    pub fn get<'a2>(&self, env: &mut JNIEnv<'a2>, idx: jint) -> Result<Option<JObject<'a2>>> {
+    pub fn get<'other_local>(&self, env: &mut JNIEnv<'other_local>, idx: jint) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -113,7 +113,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     }
 
     /// Remove an element from the list by index
-    pub fn remove<'a2>(&self, env: &mut JNIEnv<'a2>, idx: jint) -> Result<Option<JObject<'a2>>> {
+    pub fn remove<'other_local>(&self, env: &mut JNIEnv<'other_local>, idx: jint) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a int, rather than any other java type.
         let result = unsafe {
@@ -152,7 +152,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
     /// Pop the last element from the list
     ///
     /// Note that this calls `size()` to determine the last index.
-    pub fn pop<'a2>(&self, env: &mut JNIEnv<'a2>) -> Result<Option<JObject<'a2>>> {
+    pub fn pop<'other_local>(&self, env: &mut JNIEnv<'other_local>) -> Result<Option<JObject<'other_local>>> {
         let size = self.size(env)?;
         if size == 0 {
             return Ok(None);
@@ -180,7 +180,7 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
 
     /// Get key/value iterator for the map. This is done by getting the
     /// `EntrySet` from java and iterating over it.
-    pub fn iter<'list>(&'list self, env: &mut JNIEnv) -> Result<JListIter<'list, 'a, 'b>> {
+    pub fn iter<'list>(&'list self, env: &mut JNIEnv) -> Result<JListIter<'list, 'local, 'obj_ref>> {
         Ok(JListIter {
             list: self,
             current: 0,
@@ -193,13 +193,13 @@ impl<'a: 'b, 'b> JList<'a, 'b> {
 ///
 /// TODO: make the iterator implementation for java iterators its own thing
 /// and generic enough to use elsewhere.
-pub struct JListIter<'list, 'a: 'b, 'b> {
-    list: &'list JList<'a, 'b>,
+pub struct JListIter<'list, 'local: 'obj_ref, 'obj_ref> {
+    list: &'list JList<'local, 'obj_ref>,
     current: jint,
     size: jint,
 }
 
-impl<'list, 'a: 'b, 'b> JListIter<'list, 'a, 'b> {
+impl<'list, 'local: 'obj_ref, 'obj_ref> JListIter<'list, 'local, 'obj_ref> {
     /// Advances the iterator and returns the next object in the
     /// `java.util.List`, or `None` if there are no more objects.
     ///
@@ -212,7 +212,7 @@ impl<'list, 'a: 'b, 'b> JListIter<'list, 'a, 'b> {
     ///
     /// This is like [`Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
-    pub fn next<'a2>(&mut self, env: &mut JNIEnv<'a2>) -> Result<Option<JObject<'a2>>> {
+    pub fn next<'other_local>(&mut self, env: &mut JNIEnv<'other_local>) -> Result<Option<JObject<'other_local>>> {
         if self.current == self.size {
             return Ok(None);
         }

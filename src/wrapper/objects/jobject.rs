@@ -30,27 +30,27 @@ use crate::{JNIEnv, objects::GlobalRef};
 /// lifetime `'a` is `'static`.
 #[repr(transparent)]
 #[derive(Debug)]
-pub struct JObject<'a> {
+pub struct JObject<'local> {
     internal: jobject,
-    lifetime: PhantomData<&'a ()>,
+    lifetime: PhantomData<&'local ()>,
 }
 
 unsafe impl Send for JObject<'static> {}
 unsafe impl Sync for JObject<'static> {}
 
-impl<'a> AsRef<JObject<'a>> for JObject<'a> {
-    fn as_ref(&self) -> &JObject<'a> {
+impl<'local> AsRef<JObject<'local>> for JObject<'local> {
+    fn as_ref(&self) -> &JObject<'local> {
         self
     }
 }
 
-impl<'a> AsMut<JObject<'a>> for JObject<'a> {
-    fn as_mut(&mut self) -> &mut JObject<'a> {
+impl<'local> AsMut<JObject<'local>> for JObject<'local> {
+    fn as_mut(&mut self) -> &mut JObject<'local> {
         self
     }
 }
 
-impl<'a> ::std::ops::Deref for JObject<'a> {
+impl<'local> ::std::ops::Deref for JObject<'local> {
     type Target = jobject;
 
     fn deref(&self) -> &Self::Target {
@@ -58,7 +58,7 @@ impl<'a> ::std::ops::Deref for JObject<'a> {
     }
 }
 
-impl<'a> JObject<'a> {
+impl<'local> JObject<'local> {
     /// Creates a [`JObject`] that wraps the given `raw` [`jobject`]
     ///
     /// # Safety
@@ -95,7 +95,7 @@ impl<'a> JObject<'a> {
     }
 }
 
-impl<'a> std::default::Default for JObject<'a> {
+impl<'local> std::default::Default for JObject<'local> {
     fn default() -> Self {
         Self::null()
     }
