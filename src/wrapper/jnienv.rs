@@ -351,6 +351,10 @@ impl<'local> JNIEnv<'local> {
     {
         let throwable = obj.lookup(self)?;
         let res: i32 = jni_unchecked!(self.internal, Throw, throwable.as_ref().as_raw());
+
+        // Ensure that `throwable` isn't dropped before the JNI call returns.
+        drop(throwable);
+
         if res == 0 {
             Ok(())
         } else {
@@ -373,6 +377,10 @@ impl<'local> JNIEnv<'local> {
         let class = class.lookup(self)?;
         let msg = msg.into();
         let res: i32 = jni_unchecked!(self.internal, ThrowNew, class.as_ref().as_raw(), msg.as_ptr());
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         if res == 0 {
             Ok(())
         } else {
@@ -757,6 +765,10 @@ impl<'local> JNIEnv<'local> {
     {
         let class = class.lookup(self)?;
         let obj = jni_non_null_call!(self.internal, AllocObject, class.as_ref().as_raw());
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         Ok(unsafe { JObject::from_raw(obj) })
     }
 
@@ -923,6 +935,9 @@ impl<'local> JNIEnv<'local> {
             Ok(unsafe { JStaticFieldID::from_raw(field_id) })
         });
 
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         match res {
             Ok(m) => Ok(m),
             Err(e) => match e {
@@ -978,16 +993,16 @@ impl<'local> JNIEnv<'local> {
 
         let method_id = method_id.lookup(self)?.as_ref().into_raw();
 
-        let class = class.as_ref().as_raw();
+        let class_raw = class.as_ref().as_raw();
         let jni_args = args.as_ptr();
 
         // TODO clean this up
-        Ok(match ret {
+        let ret = Ok(match ret {
             ReturnType::Object | ReturnType::Array => {
                 let obj = jni_non_void_call!(
                     self.internal,
                     CallStaticObjectMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 );
@@ -998,7 +1013,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Boolean => jni_non_void_call!(
                     self.internal,
                     CallStaticBooleanMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1006,7 +1021,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Char => jni_non_void_call!(
                     self.internal,
                     CallStaticCharMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1014,7 +1029,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Short => jni_non_void_call!(
                     self.internal,
                     CallStaticShortMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1022,7 +1037,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Int => jni_non_void_call!(
                     self.internal,
                     CallStaticIntMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1030,7 +1045,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Long => jni_non_void_call!(
                     self.internal,
                     CallStaticLongMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1038,7 +1053,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Float => jni_non_void_call!(
                     self.internal,
                     CallStaticFloatMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1046,7 +1061,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Double => jni_non_void_call!(
                     self.internal,
                     CallStaticDoubleMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1054,7 +1069,7 @@ impl<'local> JNIEnv<'local> {
                 Primitive::Byte => jni_non_void_call!(
                     self.internal,
                     CallStaticByteMethodA,
-                    class,
+                    class_raw,
                     method_id,
                     jni_args
                 )
@@ -1063,14 +1078,19 @@ impl<'local> JNIEnv<'local> {
                     jni_void_call!(
                         self.internal,
                         CallStaticVoidMethodA,
-                        class,
+                        class_raw,
                         method_id,
                         jni_args
                     );
                     return Ok(JValueOwned::Void);
                 }
             }, // JavaType::Primitive
-        }) // match parsed.ret
+        }); // match parsed.ret
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
+        ret
     }
 
     /// Call an object method in an unsafe manner. This does nothing to check
@@ -1350,6 +1370,10 @@ impl<'local> JNIEnv<'local> {
             ctor_id.into_raw(),
             jni_args
         );
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         Ok(unsafe { JObject::from_raw(obj) })
     }
 
@@ -1467,13 +1491,19 @@ impl<'local> JNIEnv<'local> {
         U: AsRef<JObject<'other_local_1>>,
     {
         let class = element_class.lookup(self)?;
-        Ok(jni_non_null_call!(
+
+        let ret = Ok(jni_non_null_call!(
             self.internal,
             NewObjectArray,
             length,
             class.as_ref().as_raw(),
             initial_element.as_ref().as_raw()
-        ))
+        ));
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
+        ret
     }
 
     /// Returns an element of the `jobjectArray` array.
@@ -2158,6 +2188,10 @@ impl<'local> JNIEnv<'local> {
             }
             JP(Primitive::Void) => return Err(Error::WrongJValueType("void", "see java field")),
         };
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         Ok(result)
     }
 
@@ -2209,6 +2243,9 @@ impl<'local> JNIEnv<'local> {
             }
             JValue::Void => return Err(Error::WrongJValueType("void", "?")),
         }
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
 
         Ok(())
     }
@@ -2415,6 +2452,10 @@ impl<'local> JNIEnv<'local> {
             jni_native_methods.as_ptr(),
             jni_native_methods.len() as jint
         );
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         jni_error_code_to_result(res)
     }
 
@@ -2425,6 +2466,10 @@ impl<'local> JNIEnv<'local> {
     {
         let class = class.lookup(self)?;
         let res = jni_non_void_call!(self.internal, UnregisterNatives, class.as_ref().as_raw());
+
+        // Ensure that `class` isn't dropped before the JNI call returns.
+        drop(class);
+
         jni_error_code_to_result(res)
     }
 
