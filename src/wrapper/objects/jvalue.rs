@@ -75,6 +75,15 @@ impl<O> JValueGen<O> {
         val
     }
 
+    /// Convert the enum to its jni-compatible equivalent.
+    #[deprecated = "Use `as_jni` instead."]
+    pub fn to_jni<'local>(self) -> jvalue
+    where
+        O: AsRef<JObject<'local>> + Debug,
+    {
+        self.as_jni()
+    }
+
     /// Get the type name for the enum variant.
     pub fn type_name(&self) -> &'static str {
         match *self {
