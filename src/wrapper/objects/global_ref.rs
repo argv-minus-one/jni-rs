@@ -67,6 +67,18 @@ impl GlobalRef {
             inner: Arc::new(GlobalRefGuard::from_raw(vm, raw_global_ref)),
         }
     }
+
+    /// Get the object from the global ref
+    ///
+    /// This borrows the ref and prevents it from being dropped as long as the
+    /// JObject sticks around.
+    #[deprecated(
+        since = "0.21.0",
+        note = "use `.as_ref()` instead",
+    )]
+    pub fn as_obj(&self) -> &JObject<'static> {
+        self.as_ref()
+    }
 }
 
 impl GlobalRefGuard {
