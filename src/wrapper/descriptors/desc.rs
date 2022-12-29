@@ -21,6 +21,66 @@ pub unsafe trait Desc<'local, T> {
     type Output: AsRef<T>;
 
     /// Look up the concrete type from the JVM.
+    ///
+    /// Note that this method does not return exactly `T`. Instead, it returns
+    /// some type that implements `AsRef<T>`. For this reason, it is often
+    /// necessary to use turbofish syntax when calling this method:
+    ///
+    /// ```rust,no_run
+    /// # use jni::{descriptors::Desc, errors::Result, JNIEnv, objects::JClass};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// // The value returned by `lookup` is not exactly `JClass`.
+    /// let class/*: impl AsRef<JClass> */ =
+    ///     Desc::<JClass>::lookup("java/lang/Object", env)?;
+    ///
+    /// // But `&JClass` can be borrowed from it.
+    /// let class: &JClass = class.as_ref();
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// **Warning:** Many built-in implementations of this trait return
+    /// [`AutoLocal`] from this method. If you then call [`JObject::as_raw`] on
+    /// the returned object reference, this may result in the reference being
+    /// [deleted][JNIEnv::delete_local_ref] before it is used, causing
+    /// undefined behavior.
+    ///
+    /// For example, don't do this:
+    ///
+    /// ```rust,no_run
+    /// # use jni::{descriptors::Desc, errors::Result, JNIEnv, objects::JClass};
+    /// #
+    /// # fn some_function<T>(ptr: *mut T) {}
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// // Undefined behavior: the `JClass` is dropped before the raw pointer
+    /// // is passed to `some_function`!
+    /// some_function(Desc::<JClass>::lookup("java/lang/Object", env)?.as_raw());
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Instead, do this:
+    ///
+    /// ```rust,no_run
+    /// # use jni::{descriptors::Desc, errors::Result, JNIEnv, objects::JClass};
+    /// #
+    /// # fn some_function<T>(ptr: *mut T) {}
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// let class = Desc::<JClass>::lookup("java/lang/Object", env)?;
+    ///
+    /// some_function(class.as_raw());
+    ///
+    /// drop(class);
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// This will still work without the call to `drop` at the end, but calling
+    /// `drop` ensures that the reference is not accidentally dropped earlier
+    /// than it should be.
     fn lookup(self, _: &mut JNIEnv<'local>) -> Result<Self::Output>;
 }
 
