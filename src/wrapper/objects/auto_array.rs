@@ -22,6 +22,13 @@ pub unsafe trait TypeArray {
     fn get(env: &mut JNIEnv, obj: &JObject, is_copy: &mut jboolean) -> Result<*mut Self>;
 
     /// releaser
+    ///
+    /// # Safety
+    ///
+    /// `ptr` must have been previously returned by the `get` function.
+    ///
+    /// If `mode` is not [`sys::JNI_COMMIT`], `ptr` must not be used again after calling this
+    /// function.
     unsafe fn release(env: &mut JNIEnv, obj: &JObject, ptr: NonNull<Self>, mode: i32)
         -> Result<()>;
 }

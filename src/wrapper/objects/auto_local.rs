@@ -89,7 +89,7 @@ where
             // Safety: The `&mut` proves that `self_md.obj` is valid and not aliased. It is not
             // accessed again after this point. It is wrapped inside `ManuallyDrop`, and will
             // therefore not be dropped after it is moved.
-            ptr::read(&mut *self_md.obj)
+            ptr::read(&*self_md.obj)
         }
     }
 }

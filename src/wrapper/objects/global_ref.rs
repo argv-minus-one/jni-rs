@@ -44,7 +44,7 @@ impl AsRef<GlobalRef> for GlobalRef {
 
 impl AsRef<JObject<'static>> for GlobalRef {
     fn as_ref(&self) -> &JObject<'static> {
-        &*self
+        self
     }
 }
 

@@ -17,7 +17,7 @@ impl<'local> AsRef<JClass<'local>> for JClass<'local> {
 
 impl<'local> AsRef<JObject<'local>> for JClass<'local> {
     fn as_ref(&self) -> &JObject<'local> {
-        &**self
+        self
     }
 }
 

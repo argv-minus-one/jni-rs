@@ -16,7 +16,7 @@ impl<'local> AsRef<JThrowable<'local>> for JThrowable<'local> {
 
 impl<'local> AsRef<JObject<'local>> for JThrowable<'local> {
     fn as_ref(&self) -> &JObject<'local> {
-        &**self
+        self
     }
 }
 

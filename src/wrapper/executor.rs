@@ -76,8 +76,8 @@ impl Executor {
 
         let mut jni_env = self.vm.attach_current_thread_as_daemon()?;
         let mut result = None;
-        jni_env.with_local_frame(capacity, |mut jni_env| {
-            result = Some(f(&mut jni_env));
+        jni_env.with_local_frame(capacity, |jni_env| {
+            result = Some(f(jni_env));
             Ok(JObject::null())
         })?;
 

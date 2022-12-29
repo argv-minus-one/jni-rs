@@ -14,7 +14,7 @@ impl<'local> AsRef<JByteBuffer<'local>> for JByteBuffer<'local> {
 
 impl<'local> AsRef<JObject<'local>> for JByteBuffer<'local> {
     fn as_ref(&self) -> &JObject<'local> {
-        &**self
+        self
     }
 }
 

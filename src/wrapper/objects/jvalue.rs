@@ -201,7 +201,7 @@ impl<O> JValueGen<O> {
     ///
     /// If the value is a primitive type, it is copied. If the value is an
     /// object reference, it is borrowed.
-    pub fn borrow<'obj_ref>(&'obj_ref self) -> JValueGen<&'obj_ref O> {
+    pub fn borrow(&self) -> JValueGen<&O> {
         match self {
             JValueGen::Object(o) => JValueGen::Object(o),
             JValueGen::Byte(v) => JValueGen::Byte(*v),
