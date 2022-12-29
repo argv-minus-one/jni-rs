@@ -73,7 +73,7 @@ impl<'local, 'env> AutoPrimitiveArray<'local, 'env> {
     }
 }
 
-impl<'local, 'env> AsRef<AutoPrimitiveArray<'local, 'env>> for AutoPrimitiveArray<'local,'env> {
+impl<'local, 'env> AsRef<AutoPrimitiveArray<'local, 'env>> for AutoPrimitiveArray<'local, 'env> {
     fn as_ref(&self) -> &AutoPrimitiveArray<'local, 'env> {
         self
     }

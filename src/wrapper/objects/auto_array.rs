@@ -22,7 +22,8 @@ pub unsafe trait TypeArray {
     fn get(env: &mut JNIEnv, obj: &JObject, is_copy: &mut jboolean) -> Result<*mut Self>;
 
     /// releaser
-    unsafe fn release(env: &mut JNIEnv, obj: &JObject, ptr: NonNull<Self>, mode: i32) -> Result<()>;
+    unsafe fn release(env: &mut JNIEnv, obj: &JObject, ptr: NonNull<Self>, mode: i32)
+        -> Result<()>;
 }
 
 // TypeArray builder
@@ -44,9 +45,20 @@ macro_rules! type_array {
             }
 
             /// Release Java $jni_type array
-            unsafe fn release(env: &mut JNIEnv, obj: &JObject, ptr: NonNull<Self>, mode: i32) -> Result<()> {
+            unsafe fn release(
+                env: &mut JNIEnv,
+                obj: &JObject,
+                ptr: NonNull<Self>,
+                mode: i32,
+            ) -> Result<()> {
                 let internal = env.get_native_interface();
-                jni_unchecked!(internal, $jni_release, obj.as_raw(), ptr.as_ptr(), mode as i32);
+                jni_unchecked!(
+                    internal,
+                    $jni_release,
+                    obj.as_raw(),
+                    ptr.as_ptr(),
+                    mode as i32
+                );
                 Ok(())
             }
         }
@@ -82,7 +94,11 @@ pub struct AutoArray<'local, T: TypeArray> {
 }
 
 impl<'local, T: TypeArray> AutoArray<'local, T> {
-    pub(crate) fn new(env: &mut JNIEnv<'local>, obj: JObject<'local>, mode: ReleaseMode) -> Result<Self> {
+    pub(crate) fn new(
+        env: &mut JNIEnv<'local>,
+        obj: JObject<'local>,
+        mode: ReleaseMode,
+    ) -> Result<Self> {
         // Safety: The cloned `JNIEnv` will not be used to create any local references. It will be
         // passed to the methods of the `TypeArray` implementation, but that trait is `unsafe` and
         // implementations are required to uphold the invariants of `unsafe_clone`.

@@ -36,7 +36,10 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
-    pub fn from_env(env: &mut JNIEnv<'local>, obj: &'obj_ref JObject<'local>) -> Result<JMap<'local, 'obj_ref>> {
+    pub fn from_env(
+        env: &mut JNIEnv<'local>,
+        obj: &'obj_ref JObject<'local>,
+    ) -> Result<JMap<'local, 'obj_ref>> {
         let class = AutoLocal::new(env.find_class("java/util/Map")?, env);
 
         let get = env.get_method_id(&class, "get", "(Ljava/lang/Object;)Ljava/lang/Object;")?;
@@ -61,7 +64,11 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
 
     /// Look up the value for a key. Returns `Some` if it's found and `None` if
     /// a null pointer would be returned.
-    pub fn get<'other_local>(&self, env: &mut JNIEnv<'other_local>, key: &JObject) -> Result<Option<JObject<'other_local>>> {
+    pub fn get<'other_local>(
+        &self,
+        env: &mut JNIEnv<'other_local>,
+        key: &JObject,
+    ) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -84,7 +91,12 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
 
     /// Look up the value for a key. Returns `Some` with the old value if the
     /// key already existed and `None` if it's a new key.
-    pub fn put<'other_local>(&self, env: &mut JNIEnv<'other_local>, key: &JObject, value: &JObject) -> Result<Option<JObject<'other_local>>> {
+    pub fn put<'other_local>(
+        &self,
+        env: &mut JNIEnv<'other_local>,
+        key: &JObject,
+        value: &JObject,
+    ) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -107,7 +119,11 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
 
     /// Remove a value from the map. Returns `Some` with the removed value and
     /// `None` if there was no value for the key.
-    pub fn remove<'other_local>(&self, env: &mut JNIEnv<'other_local>, key: &JObject) -> Result<Option<JObject<'other_local>>> {
+    pub fn remove<'other_local>(
+        &self,
+        env: &mut JNIEnv<'other_local>,
+        key: &JObject,
+    ) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -159,21 +175,21 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
     /// have a small, predictable size, the loop could be wrapped in
     /// [`JNIEnv::with_local_frame`] to delete all of the local references at
     /// once.
-    pub fn iter<'map, 'iter_local>(&'map self, env: &mut JNIEnv<'iter_local>) -> Result<JMapIter<'map, 'local, 'obj_ref, 'iter_local>> {
+    pub fn iter<'map, 'iter_local>(
+        &'map self,
+        env: &mut JNIEnv<'iter_local>,
+    ) -> Result<JMapIter<'map, 'local, 'obj_ref, 'iter_local>> {
         let iter_class = AutoLocal::new(env.find_class("java/util/Iterator")?, env);
 
         let has_next = env.get_method_id(&iter_class, "hasNext", "()Z")?;
 
-        let next = env
-            .get_method_id(&iter_class, "next", "()Ljava/lang/Object;")?;
+        let next = env.get_method_id(&iter_class, "next", "()Ljava/lang/Object;")?;
 
         let entry_class = AutoLocal::new(env.find_class("java/util/Map$Entry")?, env);
 
-        let get_key = env
-            .get_method_id(&entry_class, "getKey", "()Ljava/lang/Object;")?;
+        let get_key = env.get_method_id(&entry_class, "getKey", "()Ljava/lang/Object;")?;
 
-        let get_value = env
-            .get_method_id(&entry_class, "getValue", "()Ljava/lang/Object;")?;
+        let get_value = env.get_method_id(&entry_class, "getValue", "()Ljava/lang/Object;")?;
 
         // Get the iterator over Map entries.
         // Use the local frame till #109 is resolved, so that implicitly looked-up
@@ -253,7 +269,10 @@ impl<'map, 'local: 'obj_ref, 'obj_ref, 'iter_local> JMapIter<'map, 'local, 'obj_
     ///
     /// This is like [`std::iter::Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
-    pub fn next<'other_local>(&mut self, env: &mut JNIEnv<'other_local>) -> Result<Option<(JObject<'other_local>, JObject<'other_local>)>> {
+    pub fn next<'other_local>(
+        &mut self,
+        env: &mut JNIEnv<'other_local>,
+    ) -> Result<Option<(JObject<'other_local>, JObject<'other_local>)>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for these functions. We know none expect args.
 
         let has_next = unsafe {
@@ -269,21 +288,18 @@ impl<'map, 'local: 'obj_ref, 'obj_ref, 'iter_local> JMapIter<'map, 'local, 'obj_
         if !has_next {
             return Ok(None);
         }
-        let next = unsafe {
-            env.call_method_unchecked(&self.iter, self.next, ReturnType::Object, &[])
-        }?
-        .l()?;
+        let next =
+            unsafe { env.call_method_unchecked(&self.iter, self.next, ReturnType::Object, &[]) }?
+                .l()?;
         let next = env.auto_local(next);
 
-        let key = unsafe {
-            env.call_method_unchecked(&next, self.get_key, ReturnType::Object, &[])
-        }?
-        .l()?;
+        let key =
+            unsafe { env.call_method_unchecked(&next, self.get_key, ReturnType::Object, &[]) }?
+                .l()?;
 
-        let value = unsafe {
-            env.call_method_unchecked(&next, self.get_value, ReturnType::Object, &[])
-        }?
-        .l()?;
+        let value =
+            unsafe { env.call_method_unchecked(&next, self.get_value, ReturnType::Object, &[]) }?
+                .l()?;
 
         Ok(Some((key, value)))
     }

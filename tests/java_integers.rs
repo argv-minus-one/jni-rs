@@ -25,7 +25,10 @@ fn test_java_integers() {
                     "java/util/Arrays",
                     "binarySearch",
                     "([Ljava/lang/Object;Ljava/lang/Object;)I",
-                    &[JValue::Object(&values_array), JValue::Object(&integer_value)],
+                    &[
+                        JValue::Object(&values_array),
+                        JValue::Object(&integer_value),
+                    ],
                 )?
                 .i()?;
 

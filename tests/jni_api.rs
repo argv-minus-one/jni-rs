@@ -269,7 +269,12 @@ pub fn call_method_with_bad_args_errs() {
     let s = env.new_string(TESTING_OBJECT_STR).unwrap();
 
     let is_bad_typ = env
-        .call_method(&s, "indexOf", "(I)I", &[JValue::Float(std::f32::consts::PI)])
+        .call_method(
+            &s,
+            "indexOf",
+            "(I)I",
+            &[JValue::Float(std::f32::consts::PI)],
+        )
         .map_err(|error| matches!(error, Error::InvalidArgList(_)))
         .expect_err("JNIEnv#callmethod with bad arg type should err");
 
@@ -960,7 +965,9 @@ fn short_lifetime_with_local_frame() {
     assert!(object.is_ok());
 }
 
-fn short_lifetime_with_local_frame_sub_fn<'local>(env: &'_ mut JNIEnv<'local>) -> Result<JObject<'local>, Error> {
+fn short_lifetime_with_local_frame_sub_fn<'local>(
+    env: &'_ mut JNIEnv<'local>,
+) -> Result<JObject<'local>, Error> {
     env.with_local_frame(16, |env| {
         env.new_object(INTEGER_CLASS, "(I)V", &[JValue::from(5)])
     })
@@ -974,7 +981,9 @@ fn short_lifetime_list() {
     assert_eq!(value.unwrap().i().unwrap(), 1);
 }
 
-fn short_lifetime_list_sub_fn<'local>(env: &'_ mut JNIEnv<'local>) -> Result<JObject<'local>, Error> {
+fn short_lifetime_list_sub_fn<'local>(
+    env: &'_ mut JNIEnv<'local>,
+) -> Result<JObject<'local>, Error> {
     let list_object = env.new_object(ARRAYLIST_CLASS, "()V", &[])?;
     let list = JList::from_env(env, &list_object)?;
     let element = env.new_object(INTEGER_CLASS, "(I)V", &[JValue::from(1)])?;

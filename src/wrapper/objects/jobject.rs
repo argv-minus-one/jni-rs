@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use crate::sys::jobject;
 
 #[cfg(doc)]
-use crate::{JNIEnv, objects::GlobalRef};
+use crate::{objects::GlobalRef, JNIEnv};
 
 /// Wrapper around `sys::jobject` that adds a lifetime. This prevents it from
 /// outliving the context in which it was acquired and getting GC'd out from

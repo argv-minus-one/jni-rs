@@ -229,7 +229,9 @@ impl<'local, T: Into<JObject<'local>>> From<T> for JValueOwned<'local> {
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref, T: AsRef<JObject<'local>>> From<&'obj_ref T> for JValue<'local, 'obj_ref> {
+impl<'local: 'obj_ref, 'obj_ref, T: AsRef<JObject<'local>>> From<&'obj_ref T>
+    for JValue<'local, 'obj_ref>
+{
     fn from(other: &'obj_ref T) -> Self {
         Self::Object(other.as_ref())
     }

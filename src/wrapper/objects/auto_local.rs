@@ -49,7 +49,10 @@ where
         // delete one.
         let env = unsafe { env.unsafe_clone() };
 
-        AutoLocal { obj: ManuallyDrop::new(obj), env }
+        AutoLocal {
+            obj: ManuallyDrop::new(obj),
+            env,
+        }
     }
 
     /// Forget the wrapper, returning the original object.

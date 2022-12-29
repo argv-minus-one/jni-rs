@@ -94,7 +94,11 @@ where
     v.i().unwrap()
 }
 
-fn jni_int_call_unchecked<'local, M>(env: &mut JNIEnv<'local>, obj: &JObject<'local>, method_id: M) -> jint
+fn jni_int_call_unchecked<'local, M>(
+    env: &mut JNIEnv<'local>,
+    obj: &JObject<'local>,
+    method_id: M,
+) -> jint
 where
     M: Desc<'local, JMethodID>,
 {

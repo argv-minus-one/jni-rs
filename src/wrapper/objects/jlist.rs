@@ -36,7 +36,10 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
-    pub fn from_env(env: &mut JNIEnv, obj: &'obj_ref JObject<'local>) -> Result<JList<'local, 'obj_ref>> {
+    pub fn from_env(
+        env: &mut JNIEnv,
+        obj: &'obj_ref JObject<'local>,
+    ) -> Result<JList<'local, 'obj_ref>> {
         let class = AutoLocal::new(env.find_class("java/util/List")?, env);
 
         let get = env.get_method_id(&class, "get", "(I)Ljava/lang/Object;")?;
@@ -57,7 +60,11 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
 
     /// Look up the value for a key. Returns `Some` if it's found and `None` if
     /// a null pointer would be returned.
-    pub fn get<'other_local>(&self, env: &mut JNIEnv<'other_local>, idx: jint) -> Result<Option<JObject<'other_local>>> {
+    pub fn get<'other_local>(
+        &self,
+        env: &mut JNIEnv<'other_local>,
+        idx: jint,
+    ) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -113,7 +120,11 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     }
 
     /// Remove an element from the list by index
-    pub fn remove<'other_local>(&self, env: &mut JNIEnv<'other_local>, idx: jint) -> Result<Option<JObject<'other_local>>> {
+    pub fn remove<'other_local>(
+        &self,
+        env: &mut JNIEnv<'other_local>,
+        idx: jint,
+    ) -> Result<Option<JObject<'other_local>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a int, rather than any other java type.
         let result = unsafe {
@@ -152,7 +163,10 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     /// Pop the last element from the list
     ///
     /// Note that this calls `size()` to determine the last index.
-    pub fn pop<'other_local>(&self, env: &mut JNIEnv<'other_local>) -> Result<Option<JObject<'other_local>>> {
+    pub fn pop<'other_local>(
+        &self,
+        env: &mut JNIEnv<'other_local>,
+    ) -> Result<Option<JObject<'other_local>>> {
         let size = self.size(env)?;
         if size == 0 {
             return Ok(None);
@@ -208,7 +222,10 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     /// small, predictable size, the loop could be wrapped in
     /// [`JNIEnv::with_local_frame`] to delete all of the local references at
     /// once.
-    pub fn iter<'list>(&'list self, env: &mut JNIEnv) -> Result<JListIter<'list, 'local, 'obj_ref>> {
+    pub fn iter<'list>(
+        &'list self,
+        env: &mut JNIEnv,
+    ) -> Result<JListIter<'list, 'local, 'obj_ref>> {
         Ok(JListIter {
             list: self,
             current: 0,
@@ -251,7 +268,10 @@ impl<'list, 'local: 'obj_ref, 'obj_ref> JListIter<'list, 'local, 'obj_ref> {
     ///
     /// This is like [`std::iter::Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
-    pub fn next<'other_local>(&mut self, env: &mut JNIEnv<'other_local>) -> Result<Option<JObject<'other_local>>> {
+    pub fn next<'other_local>(
+        &mut self,
+        env: &mut JNIEnv<'other_local>,
+    ) -> Result<Option<JObject<'other_local>>> {
         if self.current == self.size {
             return Ok(None);
         }

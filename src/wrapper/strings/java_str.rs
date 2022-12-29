@@ -116,7 +116,9 @@ impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
         // Safety: The `&mut` proves that `self.env` is valid and not aliased. It is not
         // accessed again after this point. Because `self` has been moved into `ManuallyDrop`,
         // the `JNIEnv` will not be dropped twice.
-        unsafe { std::ptr::drop_in_place(&mut _dont_call_drop.env); }
+        unsafe {
+            std::ptr::drop_in_place(&mut _dont_call_drop.env);
+        }
 
         _dont_call_drop.internal
     }
@@ -142,7 +144,11 @@ impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
     /// # Ok(())
     /// # }
     /// ```
-    pub unsafe fn from_raw(env: &JNIEnv<'local>, obj: &'obj_ref JString<'local>, ptr: *const c_char) -> Self {
+    pub unsafe fn from_raw(
+        env: &JNIEnv<'local>,
+        obj: &'obj_ref JString<'local>,
+        ptr: *const c_char,
+    ) -> Self {
         Self {
             internal: ptr,
             obj,
@@ -161,13 +167,17 @@ impl<'local: 'obj_ref, 'obj_ref> ::std::ops::Deref for JavaStr<'local, 'obj_ref>
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'local, 'obj_ref>> for &'java_str JNIStr {
+impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'local, 'obj_ref>>
+    for &'java_str JNIStr
+{
     fn from(other: &'java_str JavaStr) -> &'java_str JNIStr {
         unsafe { JNIStr::from_ptr(other.internal) }
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'local, 'obj_ref>> for Cow<'java_str, str> {
+impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'local, 'obj_ref>>
+    for Cow<'java_str, str>
+{
     fn from(other: &'java_str JavaStr) -> Cow<'java_str, str> {
         let jni_str: &JNIStr = other;
         jni_str.into()

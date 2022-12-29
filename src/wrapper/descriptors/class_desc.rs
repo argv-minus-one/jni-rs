@@ -25,7 +25,9 @@ unsafe impl<'local, 'other_local> Desc<'local, JClass<'local>> for JObject<'othe
     }
 }
 
-unsafe impl<'local, 'other_local, 'obj_ref> Desc<'local, JClass<'local>> for &'obj_ref JObject<'other_local> {
+unsafe impl<'local, 'other_local, 'obj_ref> Desc<'local, JClass<'local>>
+    for &'obj_ref JObject<'other_local>
+{
     type Output = AutoLocal<'local, JClass<'local>>;
 
     fn lookup(self, env: &mut JNIEnv<'local>) -> Result<Self::Output> {
