@@ -40,6 +40,13 @@ impl<'local> From<JObject<'local>> for JThrowable<'local> {
     }
 }
 
+impl<'local, 'obj_ref> From<&'obj_ref JObject<'local>> for &'obj_ref JThrowable<'local> {
+    fn from(other: &'obj_ref JObject<'local>) -> Self {
+        // Safety: `JThrowable` is `repr(transparent)` around `JObject`.
+        unsafe { &*(other as *const JObject<'local> as *const JThrowable<'local>) }
+    }
+}
+
 impl<'local> std::default::Default for JThrowable<'local> {
     fn default() -> Self {
         Self(JObject::null())

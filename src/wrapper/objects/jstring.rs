@@ -40,6 +40,13 @@ impl<'local> From<JObject<'local>> for JString<'local> {
     }
 }
 
+impl<'local, 'obj_ref> From<&'obj_ref JObject<'local>> for &'obj_ref JString<'local> {
+    fn from(other: &'obj_ref JObject<'local>) -> Self {
+        // Safety: `JString` is `repr(transparent)` around `JObject`.
+        unsafe { &*(other as *const JObject<'local> as *const JString<'local>) }
+    }
+}
+
 impl<'local> std::default::Default for JString<'local> {
     fn default() -> Self {
         Self(JObject::null())

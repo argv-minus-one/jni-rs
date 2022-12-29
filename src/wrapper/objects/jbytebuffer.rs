@@ -38,6 +38,13 @@ impl<'local> From<JObject<'local>> for JByteBuffer<'local> {
     }
 }
 
+impl<'local, 'obj_ref> From<&'obj_ref JObject<'local>> for &'obj_ref JByteBuffer<'local> {
+    fn from(other: &'obj_ref JObject<'local>) -> Self {
+        // Safety: `JByteBuffer` is `repr(transparent)` around `JObject`.
+        unsafe { &*(other as *const JObject<'local> as *const JByteBuffer<'local>) }
+    }
+}
+
 impl<'local> std::default::Default for JByteBuffer<'local> {
     fn default() -> Self {
         Self(JObject::null())

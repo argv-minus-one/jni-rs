@@ -42,6 +42,14 @@ impl<'local> From<JObject<'local>> for JClass<'local> {
     }
 }
 
+/// This conversion assumes that the `JObject` is a pointer to a class object.
+impl<'local, 'obj_ref> From<&'obj_ref JObject<'local>> for &'obj_ref JClass<'local> {
+    fn from(other: &'obj_ref JObject<'local>) -> Self {
+        // Safety: `JClass` is `repr(transparent)` around `JObject`.
+        unsafe { &*(other as *const JObject<'local> as *const JClass<'local>) }
+    }
+}
+
 impl<'local> std::default::Default for JClass<'local> {
     fn default() -> Self {
         Self(JObject::null())
