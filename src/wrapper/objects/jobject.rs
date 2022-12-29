@@ -14,10 +14,10 @@ use crate::{JNIEnv, objects::GlobalRef};
 /// Most other types in the `objects` module deref to this, as they do in the C
 /// representation.
 ///
-/// The lifetime `'a` represents the local reference frame that this reference
-/// belongs to. See the [`JNIEnv`] documentation for more information about
-/// local reference frames. If `'a` is `'static`, then this reference does not
-/// belong to a local reference frame, that is, it is either null or a
+/// The lifetime `'local` represents the local reference frame that this
+/// reference belongs to. See the [`JNIEnv`] documentation for more information
+/// about local reference frames. If `'local` is `'static`, then this reference
+/// does not belong to a local reference frame, that is, it is either null or a
 /// [global reference][GlobalRef].
 ///
 /// Note that an *owned* `JObject` is always a local reference and will never
@@ -27,7 +27,7 @@ use crate::{JNIEnv, objects::GlobalRef};
 ///
 /// Local references belong to a single thread and are not safe to share across
 /// threads. This type implements [`Send`] and [`Sync`] if and only if the
-/// lifetime `'a` is `'static`.
+/// lifetime `'local` is `'static`.
 #[repr(transparent)]
 #[derive(Debug)]
 pub struct JObject<'local> {
@@ -67,7 +67,7 @@ impl<'local> JObject<'local> {
     ///
     /// * `raw` must be a valid raw JNI local reference.
     /// * There must not be any other `JObject` representing the same local reference.
-    /// * The lifetime `'a` must not outlive the local reference frame that the local reference
+    /// * The lifetime `'local` must not outlive the local reference frame that the local reference
     ///   was created in.
     pub unsafe fn from_raw(raw: jobject) -> Self {
         Self {

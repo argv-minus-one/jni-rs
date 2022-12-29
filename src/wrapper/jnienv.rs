@@ -584,15 +584,15 @@ impl<'local> JNIEnv<'local> {
     ///
     /// # Lifetimes
     ///
-    /// `'a` is the lifetime of the local reference frame that this `JNIEnv` belongs to. This
-    /// method creates a new local reference in that frame, with lifetime `'a`.
+    /// `'local` is the lifetime of the local reference frame that this `JNIEnv` belongs to. This
+    /// method creates a new local reference in that frame, with lifetime `'local`.
     ///
-    /// `'b` is the lifetime of the original reference's frame. It can be any valid lifetime, even
-    /// one that `'a` outlives or vice versa.
+    /// `'other_local` is the lifetime of the original reference's frame. It can be any valid
+    /// lifetime, even one that `'local` outlives or vice versa.
     ///
-    /// Think of `'a` as meaning `'new` and `'b` as meaning `'original`. (It is unfortunately not
-    /// possible to actually give these names to the two lifetimes because `'a` is a parameter to
-    /// the `JNIEnv` type, not a parameter to this method.)
+    /// Think of `'local` as meaning `'new` and `'other_local` as meaning `'original`. (It is
+    /// unfortunately not possible to actually give these names to the two lifetimes because
+    /// `'local` is a parameter to the `JNIEnv` type, not a parameter to this method.)
     ///
     /// # Example
     ///
