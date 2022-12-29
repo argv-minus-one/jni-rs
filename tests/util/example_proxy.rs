@@ -23,7 +23,7 @@ impl AtomicIntegerProxy {
                 "(I)V",
                 &[JValue::from(init_value)],
             )?;
-            env.new_global_ref(&i)
+            env.new_global_ref(i)
         })?;
         Ok(AtomicIntegerProxy { exec, obj })
     }

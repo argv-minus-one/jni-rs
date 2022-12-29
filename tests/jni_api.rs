@@ -1052,7 +1052,7 @@ pub fn test_conversion() {
     let obj: JObject = unwrap(env.new_local_ref(&orig_obj), &env);
     let string = JString::from(obj);
     let actual = JObject::from(string);
-    assert!(unwrap(env.is_same_object(&orig_obj, &actual), &env));
+    assert!(unwrap(env.is_same_object(&orig_obj, actual), &env));
 
     let global_ref = env.new_global_ref(&orig_obj).unwrap();
     assert!(unwrap(env.is_same_object(&orig_obj, global_ref), &env));

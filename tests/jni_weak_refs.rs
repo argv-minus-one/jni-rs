@@ -100,7 +100,7 @@ fn weak_ref_is_actually_weak() {
                 env.call_static_method("java/lang/System", "gc", "()V", &[])?;
                 Ok(JObject::null())
             }),
-            &env,
+            env,
         );
     }
 
