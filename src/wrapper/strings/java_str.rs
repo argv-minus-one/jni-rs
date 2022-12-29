@@ -129,15 +129,18 @@ impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
     /// and that `obj` is the same `String` object originally used to create the [JavaStr]
     ///
     /// # Example
-    /// ```ignore
-    /// # use jni::strings::JavaStr;
-    ///
-    /// let jstring = env.new_string("foo").unwrap();
-    /// let java_str = env.get_string(jstring).unwrap();
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, strings::JavaStr};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// let jstring = env.new_string("foo")?;
+    /// let java_str = env.get_string(&jstring)?;
     ///
     /// let ptr = java_str.into_raw();
     /// // Do whatever you need with the pointer
-    /// let java_str = unsafe { JavaStr::from_raw(env, jstring, ptr) };
+    /// let java_str = unsafe { JavaStr::from_raw(env, &jstring, ptr) };
+    /// # Ok(())
+    /// # }
     /// ```
     pub unsafe fn from_raw(env: &JNIEnv<'local>, obj: &'obj_ref JString<'local>, ptr: *const c_char) -> Self {
         Self {

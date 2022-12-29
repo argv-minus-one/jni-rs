@@ -246,8 +246,13 @@ impl<'local> JNIEnv<'local> {
     /// Look up a class by name.
     ///
     /// # Example
-    /// ```rust,ignore
-    /// let class: JClass<'local> = env.find_class("java/lang/String");
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::JClass};
+    /// #
+    /// # fn example<'local>(env: &mut JNIEnv<'local>) -> Result<()> {
+    /// let class: JClass<'local> = env.find_class("java/lang/String")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn find_class<S>(&mut self, name: S) -> Result<JClass<'local>>
     where
@@ -336,14 +341,24 @@ impl<'local> JNIEnv<'local> {
     /// thrown in java unless `exception_clear` is called.
     ///
     /// # Examples
-    /// ```rust,ignore
-    /// let _ = env.throw(("java/lang/Exception", "something bad happened"));
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// env.throw(("java/lang/Exception", "something bad happened"))?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// Defaulting to "java/lang/Exception":
     ///
-    /// ```rust,ignore
-    /// let _ = env.throw("something bad happened");
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// env.throw("something bad happened")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn throw<'other_local, E>(&mut self, obj: E) -> Result<()>
     where
@@ -366,8 +381,13 @@ impl<'local> JNIEnv<'local> {
     /// message.
     ///
     /// # Example
-    /// ```rust,ignore
-    /// let _ = env.throw_new("java/lang/Exception", "something bad happened");
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// env.throw_new("java/lang/Exception", "something bad happened")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn throw_new<'other_local, S, T>(&mut self, class: T, msg: S) -> Result<()>
     where
@@ -433,13 +453,18 @@ impl<'local> JNIEnv<'local> {
     /// Create a new instance of a direct java.nio.ByteBuffer
     ///
     /// # Example
-    /// ```rust,ignore
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
     /// let buf = vec![0; 1024 * 1024];
     /// let (addr, len) = { // (use buf.into_raw_parts() on nightly)
     ///     let buf = buf.leak();
     ///     (buf.as_mut_ptr(), buf.len())
     /// };
-    /// let direct_buffer = unsafe { env.new_direct_byte_buffer(addr, len) };
+    /// let direct_buffer = unsafe { env.new_direct_byte_buffer(addr, len) }?;
+    /// # Ok(())
+    /// # }
     /// ```
     ///
     /// # Safety
@@ -810,9 +835,14 @@ impl<'local> JNIEnv<'local> {
     /// signature.
     ///
     /// # Example
-    /// ```rust,ignore
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::JMethodID};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
     /// let method_id: JMethodID =
-    ///     env.get_method_id("java/lang/String", "substring", "(II)Ljava/lang/String;");
+    ///     env.get_method_id("java/lang/String", "substring", "(II)Ljava/lang/String;")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_method_id<'other_local, T, U, V>(&mut self, class: T, name: U, sig: V) -> Result<JMethodID>
     where
@@ -836,9 +866,14 @@ impl<'local> JNIEnv<'local> {
     /// signature.
     ///
     /// # Example
-    /// ```rust,ignore
-    /// let method_id: JMethodID =
-    ///     env.get_static_method_id("java/lang/String", "valueOf", "(I)Ljava/lang/String;");
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::JStaticMethodID};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// let method_id: JStaticMethodID =
+    ///     env.get_static_method_id("java/lang/String", "valueOf", "(I)Ljava/lang/String;")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_static_method_id<'other_local, T, U, V>(
         &mut self,
@@ -866,8 +901,13 @@ impl<'local> JNIEnv<'local> {
     /// Look up the field ID for a class/name/type combination.
     ///
     /// # Example
-    /// ```rust,ignore
-    /// let field_id = env.get_field_id("com/my/Class", "intField", "I");
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::JFieldID};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// let field_id: JFieldID = env.get_field_id("com/my/Class", "intField", "I")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_field_id<'other_local, T, U, V>(&mut self, class: T, name: U, sig: V) -> Result<JFieldID>
     where
@@ -906,8 +946,13 @@ impl<'local> JNIEnv<'local> {
     /// Look up the static field ID for a class/name/type combination.
     ///
     /// # Example
-    /// ```rust,ignore
-    /// let field_id = env.get_static_field_id("com/my/Class", "intField", "I");
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::JStaticFieldID};
+    /// #
+    /// # fn example(env: &mut JNIEnv) -> Result<()> {
+    /// let field_id: JStaticFieldID = env.get_static_field_id("com/my/Class", "intField", "I")?;
+    /// # Ok(())
+    /// # }
     /// ```
     pub fn get_static_field_id<'other_local, T, U, V>(
         &mut self,
