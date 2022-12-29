@@ -180,6 +180,34 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
 
     /// Get key/value iterator for the map. This is done by getting the
     /// `EntrySet` from java and iterating over it.
+    ///
+    /// The returned iterator does not implement [`std::iter::Iterator`] and
+    /// cannot be used with a `for` loop. This is because its `next` method
+    /// uses a `&mut JNIEnv` to call the Java iterator. Use a `while let` loop
+    /// instead:
+    ///
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::{AutoLocal, JList, JObject}};
+    /// #
+    /// # fn example(env: &mut JNIEnv, list: JList) -> Result<()> {
+    /// let mut iterator = list.iter(env)?;
+    ///
+    /// while let Some(obj) = iterator.next(env)? {
+    ///     let obj: AutoLocal<JObject> = env.auto_local(obj);
+    ///
+    ///     // Do something with `obj` here.
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Each call to `next` creates a new local reference. To prevent excessive
+    /// memory usage or overflow error, the local reference should be deleted
+    /// using [`JNIEnv::delete_local_ref`] or [`JNIEnv::auto_local`] before the
+    /// next loop iteration. Alternatively, if the list is known to have a
+    /// small, predictable size, the loop could be wrapped in
+    /// [`JNIEnv::with_local_frame`] to delete all of the local references at
+    /// once.
     pub fn iter<'list>(&'list self, env: &mut JNIEnv) -> Result<JListIter<'list, 'local, 'obj_ref>> {
         Ok(JListIter {
             list: self,
@@ -189,7 +217,8 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     }
 }
 
-/// An iterator over the keys and values in a map.
+/// An iterator over the keys and values in a `java.util.List`. See
+/// [`JList::iter`] for more information.
 ///
 /// TODO: make the iterator implementation for java iterators its own thing
 /// and generic enough to use elsewhere.
@@ -203,14 +232,24 @@ impl<'list, 'local: 'obj_ref, 'obj_ref> JListIter<'list, 'local, 'obj_ref> {
     /// Advances the iterator and returns the next object in the
     /// `java.util.List`, or `None` if there are no more objects.
     ///
-    /// This returns:
+    /// See [`JList::iter`] for more information.
+    ///
+    /// This method creates a new local reference. To prevent excessive memory
+    /// usage or overflow error, the local reference should be deleted using
+    /// [`JNIEnv::delete_local_ref`] or [`JNIEnv::auto_local`] before the next
+    /// loop iteration. Alternatively, if the list is known to have a small,
+    /// predictable size, the loop could be wrapped in
+    /// [`JNIEnv::with_local_frame`] to delete all of the local references at
+    /// once.
+    ///
+    /// This method returns:
     ///
     /// * `Ok(Some(_))`: if there was another object in the list.
     /// * `Ok(None)`: if there are no more objects in the list.
     /// * `Err(_)`: if there was an error calling the Java method to
     ///   get the next object.
     ///
-    /// This is like [`Iterator::next`], but requires a parameter of
+    /// This is like [`std::iter::Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
     pub fn next<'other_local>(&mut self, env: &mut JNIEnv<'other_local>) -> Result<Option<JObject<'other_local>>> {
         if self.current == self.size {

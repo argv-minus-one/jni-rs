@@ -130,6 +130,35 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
 
     /// Get key/value iterator for the map. This is done by getting the
     /// `EntrySet` from java and iterating over it.
+    ///
+    /// The returned iterator does not implement [`std::iter::Iterator`] and
+    /// cannot be used with a `for` loop. This is because its `next` method
+    /// uses a `&mut JNIEnv` to call the Java iterator. Use a `while let` loop
+    /// instead:
+    ///
+    /// ```rust,no_run
+    /// # use jni::{errors::Result, JNIEnv, objects::{AutoLocal, JMap, JObject}};
+    /// #
+    /// # fn example(env: &mut JNIEnv, map: JMap) -> Result<()> {
+    /// let mut iterator = map.iter(env)?;
+    ///
+    /// while let Some((key, value)) = iterator.next(env)? {
+    ///     let key: AutoLocal<JObject> = env.auto_local(key);
+    ///     let value: AutoLocal<JObject> = env.auto_local(value);
+    ///
+    ///     // Do something with `key` and `value` here.
+    /// }
+    /// # Ok(())
+    /// # }
+    /// ```
+    ///
+    /// Each call to `next` creates two new local references. To prevent
+    /// excessive memory usage or overflow error, the local references should
+    /// be deleted using [`JNIEnv::delete_local_ref`] or [`JNIEnv::auto_local`]
+    /// before the next loop iteration. Alternatively, if the map is known to
+    /// have a small, predictable size, the loop could be wrapped in
+    /// [`JNIEnv::with_local_frame`] to delete all of the local references at
+    /// once.
     pub fn iter<'map, 'iter_local>(&'map self, env: &mut JNIEnv<'iter_local>) -> Result<JMapIter<'map, 'local, 'obj_ref, 'iter_local>> {
         let iter_class = AutoLocal::new(env.find_class("java/util/Iterator")?, env);
 
@@ -187,7 +216,8 @@ impl<'local: 'obj_ref, 'obj_ref> JMap<'local, 'obj_ref> {
     }
 }
 
-/// An iterator over the keys and values in a map.
+/// An iterator over the keys and values in a map. See [`JMap::iter`] for more
+/// information.
 ///
 /// TODO: make the iterator implementation for java iterators its own thing
 /// and generic enough to use elsewhere.
@@ -204,14 +234,24 @@ impl<'map, 'local: 'obj_ref, 'obj_ref, 'iter_local> JMapIter<'map, 'local, 'obj_
     /// Advances the iterator and returns the next key-value pair in the
     /// `java.util.Map`, or `None` if there are no more objects.
     ///
-    /// This returns:
+    /// See [`JMap::iter`] for more information.
+    ///
+    /// This method creates two new local references. To prevent excessive
+    /// memory usage or overflow error, the local references should be deleted
+    /// using [`JNIEnv::delete_local_ref`] or [`JNIEnv::auto_local`] before the
+    /// next loop iteration. Alternatively, if the map is known to have a
+    /// small, predictable size, the loop could be wrapped in
+    /// [`JNIEnv::with_local_frame`] to delete all of the local references at
+    /// once.
+    ///
+    /// This method returns:
     ///
     /// * `Ok(Some(_))`: if there was another key-value pair in the map.
     /// * `Ok(None)`: if there are no more key-value pairs in the map.
     /// * `Err(_)`: if there was an error calling the Java method to
     ///   get the next key-value pair.
     ///
-    /// This is like [`Iterator::next`], but requires a parameter of
+    /// This is like [`std::iter::Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
     pub fn next<'other_local>(&mut self, env: &mut JNIEnv<'other_local>) -> Result<Option<(JObject<'other_local>, JObject<'other_local>)>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for these functions. We know none expect args.
