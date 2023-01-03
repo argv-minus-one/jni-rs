@@ -9,13 +9,13 @@ use crate::{errors::*, objects::JString, strings::JNIStr, JNIEnv};
 /// returned by `GetStringUTFChars`. Calls `ReleaseStringUTFChars` on Drop.
 /// Can be converted to a `&JNIStr` with the same cost as the `&CStr.from_ptr`
 /// conversion.
-pub struct JavaStr<'local: 'obj_ref, 'obj_ref> {
+pub struct JavaStr<'local, 'other_local: 'obj_ref, 'obj_ref> {
     internal: *const c_char,
-    obj: &'obj_ref JString<'local>,
+    obj: &'obj_ref JString<'other_local>,
     env: JNIEnv<'local>,
 }
 
-impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
+impl<'local, 'other_local: 'obj_ref, 'obj_ref> JavaStr<'local, 'other_local, 'obj_ref> {
     /// Get a pointer to the character array beneath a [JString]
     ///
     /// The string will be `NULL` terminated and encoded as
@@ -79,7 +79,7 @@ impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
 
     /// Get a [JavaStr] from a [JNIEnv] and a [JString].
     /// You probably want [JNIEnv::get_string] instead of this method.
-    pub fn from_env(env: &JNIEnv<'local>, obj: &'obj_ref JString<'local>) -> Result<Self> {
+    pub fn from_env(env: &JNIEnv<'local>, obj: &'obj_ref JString<'other_local>) -> Result<Self> {
         Ok(unsafe {
             let (ptr, _) = Self::get_string_utf_chars(env, obj)?;
 
@@ -146,7 +146,7 @@ impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
     /// ```
     pub unsafe fn from_raw(
         env: &JNIEnv<'local>,
-        obj: &'obj_ref JString<'local>,
+        obj: &'obj_ref JString<'other_local>,
         ptr: *const c_char,
     ) -> Self {
         Self {
@@ -160,23 +160,25 @@ impl<'local: 'obj_ref, 'obj_ref> JavaStr<'local, 'obj_ref> {
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref> ::std::ops::Deref for JavaStr<'local, 'obj_ref> {
+impl<'local, 'other_local: 'obj_ref, 'obj_ref> ::std::ops::Deref
+    for JavaStr<'local, 'other_local, 'obj_ref>
+{
     type Target = JNIStr;
     fn deref(&self) -> &Self::Target {
         self.into()
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'local, 'obj_ref>>
-    for &'java_str JNIStr
+impl<'local, 'other_local: 'obj_ref, 'obj_ref: 'java_str, 'java_str>
+    From<&'java_str JavaStr<'local, 'other_local, 'obj_ref>> for &'java_str JNIStr
 {
     fn from(other: &'java_str JavaStr) -> &'java_str JNIStr {
         unsafe { JNIStr::from_ptr(other.internal) }
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'local, 'obj_ref>>
-    for Cow<'java_str, str>
+impl<'local, 'other_local: 'obj_ref, 'obj_ref: 'java_str, 'java_str>
+    From<&'java_str JavaStr<'local, 'other_local, 'obj_ref>> for Cow<'java_str, str>
 {
     fn from(other: &'java_str JavaStr) -> Cow<'java_str, str> {
         let jni_str: &JNIStr = other;
@@ -184,14 +186,16 @@ impl<'local: 'obj_ref, 'obj_ref: 'java_str, 'java_str> From<&'java_str JavaStr<'
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref> From<JavaStr<'local, 'obj_ref>> for String {
+impl<'local, 'other_local: 'obj_ref, 'obj_ref> From<JavaStr<'local, 'other_local, 'obj_ref>>
+    for String
+{
     fn from(other: JavaStr) -> String {
         let cow: Cow<str> = (&other).into();
         cow.into_owned()
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref> Drop for JavaStr<'local, 'obj_ref> {
+impl<'local, 'other_local: 'obj_ref, 'obj_ref> Drop for JavaStr<'local, 'other_local, 'obj_ref> {
     fn drop(&mut self) {
         match unsafe { self.release_string_utf_chars() } {
             Ok(()) => {}

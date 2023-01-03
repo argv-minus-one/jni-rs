@@ -993,7 +993,7 @@ fn short_lifetime_list_sub_fn<'local>(
 
 fn short_lifetime_list_sub_fn_get_first_element<'local>(
     env: &'_ mut JNIEnv<'local>,
-    list: &'_ JList<'local, '_>,
+    list: &'_ JList<'local, '_, '_>,
 ) -> Result<JObject<'local>, Error> {
     let mut iterator = list.iter(env)?;
     Ok(iterator.next(env)?.unwrap())

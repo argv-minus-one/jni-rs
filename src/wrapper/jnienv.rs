@@ -1464,12 +1464,12 @@ impl<'local> JNIEnv<'local> {
     /// Cast a JObject to a `JList`. This won't throw exceptions or return errors
     /// in the event that the object isn't actually a list, but the methods on
     /// the resulting map object will.
-    pub fn get_list<'obj_ref>(
+    pub fn get_list<'other_local_1, 'obj_ref>(
         &mut self,
-        obj: &'obj_ref JObject<'local>,
-    ) -> Result<JList<'local, 'obj_ref>>
+        obj: &'obj_ref JObject<'other_local_1>,
+    ) -> Result<JList<'local, 'other_local_1, 'obj_ref>>
     where
-        'local: 'obj_ref,
+        'other_local_1: 'obj_ref,
     {
         non_null!(obj, "get_list obj argument");
         JList::from_env(self, obj)
@@ -1478,12 +1478,12 @@ impl<'local> JNIEnv<'local> {
     /// Cast a JObject to a JMap. This won't throw exceptions or return errors
     /// in the event that the object isn't actually a map, but the methods on
     /// the resulting map object will.
-    pub fn get_map<'obj_ref>(
+    pub fn get_map<'other_local_1, 'obj_ref>(
         &mut self,
-        obj: &'obj_ref JObject<'local>,
-    ) -> Result<JMap<'local, 'obj_ref>>
+        obj: &'obj_ref JObject<'other_local_1>,
+    ) -> Result<JMap<'local, 'other_local_1, 'obj_ref>>
     where
-        'local: 'obj_ref,
+        'other_local_1: 'obj_ref,
     {
         non_null!(obj, "get_map obj argument");
         JMap::from_env(self, obj)
@@ -1508,10 +1508,10 @@ impl<'local> JNIEnv<'local> {
     /// # Errors
     ///
     /// Returns an error if `obj` is `null`
-    pub unsafe fn get_string_unchecked<'obj_ref>(
+    pub unsafe fn get_string_unchecked<'other_local: 'obj_ref, 'obj_ref>(
         &self,
-        obj: &'obj_ref JString<'local>,
-    ) -> Result<JavaStr<'local, 'obj_ref>> {
+        obj: &'obj_ref JString<'other_local>,
+    ) -> Result<JavaStr<'local, 'other_local, 'obj_ref>> {
         non_null!(obj, "get_string obj argument");
         JavaStr::from_env(self, obj)
     }
@@ -1539,10 +1539,10 @@ impl<'local> JNIEnv<'local> {
     /// # Errors
     ///
     /// Returns an error if `obj` is `null` or is not an instance of `java.lang.String`
-    pub fn get_string<'obj_ref>(
+    pub fn get_string<'other_local: 'obj_ref, 'obj_ref>(
         &mut self,
-        obj: &'obj_ref JString<'local>,
-    ) -> Result<JavaStr<'local, 'obj_ref>> {
+        obj: &'obj_ref JString<'other_local>,
+    ) -> Result<JavaStr<'local, 'other_local, 'obj_ref>> {
         let string_class = self.find_class("java/lang/String")?;
         if !self.is_assignable_from(string_class, self.get_object_class(obj)?)? {
             return Err(JniCall(JniError::InvalidArguments));

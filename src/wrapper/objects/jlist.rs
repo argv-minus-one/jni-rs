@@ -1,18 +1,21 @@
 use crate::{
     errors::*,
-    objects::{AutoLocal, JMethodID, JObject, JValue},
+    objects::{AutoLocal, JClass, JMethodID, JObject, JValue},
     signature::{Primitive, ReturnType},
     sys::jint,
     JNIEnv,
 };
+
+use std::marker::PhantomData;
 
 /// Wrapper for JObjects that implement `java/util/List`. Provides methods to get,
 /// add, and remove elements.
 ///
 /// Looks up the class and method ids on creation rather than for every method
 /// call.
-pub struct JList<'local: 'obj_ref, 'obj_ref> {
-    internal: &'obj_ref JObject<'local>,
+pub struct JList<'local, 'other_local_1: 'obj_ref, 'obj_ref> {
+    internal: &'obj_ref JObject<'other_local_1>,
+    _phantom_class: PhantomData<AutoLocal<'local, JClass<'local>>>,
     get: JMethodID,
     add: JMethodID,
     add_idx: JMethodID,
@@ -20,26 +23,30 @@ pub struct JList<'local: 'obj_ref, 'obj_ref> {
     size: JMethodID,
 }
 
-impl<'local: 'obj_ref, 'obj_ref> AsRef<JList<'local, 'obj_ref>> for JList<'local, 'obj_ref> {
-    fn as_ref(&self) -> &JList<'local, 'obj_ref> {
+impl<'local, 'other_local_1: 'obj_ref, 'obj_ref> AsRef<JList<'local, 'other_local_1, 'obj_ref>>
+    for JList<'local, 'other_local_1, 'obj_ref>
+{
+    fn as_ref(&self) -> &JList<'local, 'other_local_1, 'obj_ref> {
         self
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref> AsRef<JObject<'local>> for JList<'local, 'obj_ref> {
-    fn as_ref(&self) -> &JObject<'local> {
+impl<'local, 'other_local_1: 'obj_ref, 'obj_ref> AsRef<JObject<'other_local_1>>
+    for JList<'local, 'other_local_1, 'obj_ref>
+{
+    fn as_ref(&self) -> &JObject<'other_local_1> {
         self.internal
     }
 }
 
-impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
+impl<'local, 'other_local_1: 'obj_ref, 'obj_ref> JList<'local, 'other_local_1, 'obj_ref> {
     /// Create a map from the environment and an object. This looks up the
     /// necessary class and method ids to call all of the methods on it so that
     /// exra work doesn't need to be done on every method call.
     pub fn from_env(
-        env: &mut JNIEnv,
-        obj: &'obj_ref JObject<'local>,
-    ) -> Result<JList<'local, 'obj_ref>> {
+        env: &mut JNIEnv<'local>,
+        obj: &'obj_ref JObject<'other_local_1>,
+    ) -> Result<JList<'local, 'other_local_1, 'obj_ref>> {
         let class = AutoLocal::new(env.find_class("java/util/List")?, env);
 
         let get = env.get_method_id(&class, "get", "(I)Ljava/lang/Object;")?;
@@ -50,6 +57,7 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
 
         Ok(JList {
             internal: obj,
+            _phantom_class: PhantomData,
             get,
             add,
             add_idx,
@@ -60,11 +68,11 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
 
     /// Look up the value for a key. Returns `Some` if it's found and `None` if
     /// a null pointer would be returned.
-    pub fn get<'other_local>(
+    pub fn get<'other_local_2>(
         &self,
-        env: &mut JNIEnv<'other_local>,
+        env: &mut JNIEnv<'other_local_2>,
         idx: jint,
-    ) -> Result<Option<JObject<'other_local>>> {
+    ) -> Result<Option<JObject<'other_local_2>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a JObject/null, rather than another primitive type.
         let result = unsafe {
@@ -120,11 +128,11 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     }
 
     /// Remove an element from the list by index
-    pub fn remove<'other_local>(
+    pub fn remove<'other_local_2>(
         &self,
-        env: &mut JNIEnv<'other_local>,
+        env: &mut JNIEnv<'other_local_2>,
         idx: jint,
-    ) -> Result<Option<JObject<'other_local>>> {
+    ) -> Result<Option<JObject<'other_local_2>>> {
         // SAFETY: We keep the class loaded, and fetched the method ID for this function.
         // Provided argument is statically known as a int, rather than any other java type.
         let result = unsafe {
@@ -163,10 +171,10 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     /// Pop the last element from the list
     ///
     /// Note that this calls `size()` to determine the last index.
-    pub fn pop<'other_local>(
+    pub fn pop<'other_local_2>(
         &self,
-        env: &mut JNIEnv<'other_local>,
-    ) -> Result<Option<JObject<'other_local>>> {
+        env: &mut JNIEnv<'other_local_2>,
+    ) -> Result<Option<JObject<'other_local_2>>> {
         let size = self.size(env)?;
         if size == 0 {
             return Ok(None);
@@ -225,7 +233,7 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
     pub fn iter<'list>(
         &'list self,
         env: &mut JNIEnv,
-    ) -> Result<JListIter<'list, 'local, 'obj_ref>> {
+    ) -> Result<JListIter<'list, 'local, 'obj_ref, 'other_local_1>> {
         Ok(JListIter {
             list: self,
             current: 0,
@@ -239,13 +247,15 @@ impl<'local: 'obj_ref, 'obj_ref> JList<'local, 'obj_ref> {
 ///
 /// TODO: make the iterator implementation for java iterators its own thing
 /// and generic enough to use elsewhere.
-pub struct JListIter<'list, 'local: 'obj_ref, 'obj_ref> {
-    list: &'list JList<'local, 'obj_ref>,
+pub struct JListIter<'list, 'local, 'other_local_1: 'obj_ref, 'obj_ref> {
+    list: &'list JList<'local, 'other_local_1, 'obj_ref>,
     current: jint,
     size: jint,
 }
 
-impl<'list, 'local: 'obj_ref, 'obj_ref> JListIter<'list, 'local, 'obj_ref> {
+impl<'list, 'local, 'other_local_1: 'obj_ref, 'obj_ref>
+    JListIter<'list, 'local, 'other_local_1, 'obj_ref>
+{
     /// Advances the iterator and returns the next object in the
     /// `java.util.List`, or `None` if there are no more objects.
     ///
@@ -268,10 +278,10 @@ impl<'list, 'local: 'obj_ref, 'obj_ref> JListIter<'list, 'local, 'obj_ref> {
     ///
     /// This is like [`std::iter::Iterator::next`], but requires a parameter of
     /// type `&mut JNIEnv` in order to call into Java.
-    pub fn next<'other_local>(
+    pub fn next<'other_local_2>(
         &mut self,
-        env: &mut JNIEnv<'other_local>,
-    ) -> Result<Option<JObject<'other_local>>> {
+        env: &mut JNIEnv<'other_local_2>,
+    ) -> Result<Option<JObject<'other_local_2>>> {
         if self.current == self.size {
             return Ok(None);
         }
