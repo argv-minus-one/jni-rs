@@ -18,12 +18,12 @@ pub struct AutoPrimitiveArray<'local: 'env, 'env> {
     ptr: NonNull<c_void>,
     mode: ReleaseMode,
     is_copy: bool,
-    env: &'env JNIEnv<'local>,
+    env: &'env mut JNIEnv<'local>,
 }
 
 impl<'local, 'env> AutoPrimitiveArray<'local, 'env> {
     pub(crate) fn new(
-        env: &'env JNIEnv<'local>,
+        env: &'env mut JNIEnv<'local>,
         obj: JObject<'local>,
         ptr: *mut c_void,
         mode: ReleaseMode,

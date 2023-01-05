@@ -2820,11 +2820,11 @@ impl<'local> JNIEnv<'local> {
     /// If the given array is `null`, an `Error::NullPtr` is returned.
     ///
     /// See also [`get_byte_array_elements`](struct.JNIEnv.html#method.get_array_elements)
-    pub fn get_primitive_array_critical(
-        &self,
+    pub fn get_primitive_array_critical<'env>(
+        &'env mut self,
         array: jarray,
         mode: ReleaseMode,
-    ) -> Result<AutoPrimitiveArray> {
+    ) -> Result<AutoPrimitiveArray<'local, 'env>> {
         non_null!(array, "get_primitive_array_critical array argument");
         let mut is_copy: jboolean = 0xff;
         // Even though this method may throw OoME, use `jni_unchecked`

@@ -660,7 +660,7 @@ pub fn get_long_array_elements_commit() {
 
 #[test]
 pub fn get_primitive_array_critical() {
-    let env = attach_current_thread();
+    let mut env = attach_current_thread();
 
     // Create original Java array
     let buf: &[u8] = &[1, 2, 3];
