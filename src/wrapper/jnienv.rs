@@ -84,6 +84,18 @@ use crate::{
 ///   or <code>&amp;[GlobalRef]</code>. For example, [`JNIEnv::get_list`] constructs a new
 ///   [`JList`] that borrows a `&'obj_ref JObject`.
 ///
+/// ## `null` Java references
+/// `null` Java references are handled by the following rules:
+///   - If a `null` Java reference is passed to a method that expects a non-`null`
+///   argument, an `Err` result with the kind `NullPtr` is returned.
+///   - If a JNI function returns `null` to indicate an error (e.g. `new_int_array`),
+///     it is converted to `Err`/`NullPtr` or, where possible, to a more applicable
+///     error type, such as `MethodNotFound`. If the JNI function also throws
+///     an exception, the `JavaException` error kind will be preferred.
+///   - If a JNI function may return `null` Java reference as one of possible reference
+///     values (e.g., `get_object_array_element` or `get_field_unchecked`),
+///     it is converted to `JObject::null()`.
+///
 /// # `&self` and `&mut self`
 ///
 /// Most of the methods on this type take a `&mut self` reference, specifically all methods that
@@ -96,18 +108,6 @@ use crate::{
 /// undefined behavior. (See [issue #392] for background discussion.)
 ///
 /// [issue #392]: https://github.com/jni-rs/jni-rs/issues/392
-///
-/// ## `null` Java references
-/// `null` Java references are handled by the following rules:
-///   - If a `null` Java reference is passed to a method that expects a non-`null`
-///   argument, an `Err` result with the kind `NullPtr` is returned.
-///   - If a JNI function returns `null` to indicate an error (e.g. `new_int_array`),
-///     it is converted to `Err`/`NullPtr` or, where possible, to a more applicable
-///     error type, such as `MethodNotFound`. If the JNI function also throws
-///     an exception, the `JavaException` error kind will be preferred.
-///   - If a JNI function may return `null` Java reference as one of possible reference
-///     values (e.g., `get_object_array_element` or `get_field_unchecked`),
-///     it is converted to `JObject::null()`.
 ///
 /// # Checked and unchecked methods
 ///
