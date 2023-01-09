@@ -12,7 +12,7 @@ fn test_java_integers() {
     let array_length = 50;
 
     for value in -10..10 {
-        env.with_local_frame(16, |env| {
+        env.with_local_frame::<_, jni::errors::Result<()>>(16, |env| {
             let integer_value =
                 env.new_object("java/lang/Integer", "(I)V", &[JValue::Int(value)])?;
 
@@ -34,11 +34,15 @@ fn test_java_integers() {
 
             assert!(0 <= result && result < array_length);
 
-            Ok(JObject::null())
+            Ok(())
         })
         .unwrap_or_else(|e| {
             print_exception(&env);
             panic!("{:#?}", e);
-        });
+        })
+        .unwrap_or_else(|e| {
+            print_exception(&env);
+            panic!("{:#?}", e);
+        })
     }
 }

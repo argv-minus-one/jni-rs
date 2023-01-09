@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{errors::*, objects::JObject, JNIEnv, JavaVM};
+use crate::{errors::*, JNIEnv, JavaVM};
 
 /// The capacity of local frames, allocated for attached threads by default. Same as the default
 /// value Hotspot uses when calling native Java methods.
@@ -75,13 +75,7 @@ impl Executor {
         assert!(capacity > 0, "capacity should be a positive integer");
 
         let mut jni_env = self.vm.attach_current_thread_as_daemon()?;
-        let mut result = None;
-        jni_env.with_local_frame(capacity, |jni_env| {
-            result = Some(f(jni_env));
-            Ok(JObject::null())
-        })?;
-
-        result.expect("The result should be Some or this line shouldn't be reached")
+        jni_env.with_local_frame(capacity, |jni_env| f(jni_env))?
     }
 
     /// Executes a provided closure, making sure that the current thread

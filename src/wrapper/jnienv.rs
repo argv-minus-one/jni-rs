@@ -783,26 +783,60 @@ impl<'local> JNIEnv<'local> {
 
     /// Executes the given function in a new local reference frame, in which at least a given number
     /// of references can be created. Once this method returns, all references allocated
-    /// in the frame are freed, except the one that the function returns, which remains valid.
+    /// in the frame are freed.
     ///
-    /// If _no_ new frames can be allocated, returns `Err` with a pending `OutOfMemoryError`.
+    /// If a frame can't be allocated with the requested capacity for local
+    /// references, returns `Err` with a pending `OutOfMemoryError`.
     ///
-    /// See also [`auto_local`](struct.JNIEnv.html#method.auto_local) method
-    /// and `AutoLocal` type - that approach can be more convenient in loops.
-    pub fn with_local_frame<F>(&mut self, capacity: i32, f: F) -> Result<JObject<'local>>
+    /// Since local references created within this frame won't be accessible to the calling
+    /// frame then if you need to pass an object back to the caller then you can do that via a
+    /// [`GlobalRef`] / [`Self::make_global`].
+    pub fn with_local_frame<F, R>(&mut self, capacity: i32, f: F) -> Result<R>
     where
-        F: for<'new_local> FnOnce(&mut JNIEnv<'new_local>) -> Result<JObject<'new_local>>,
+        F: FnOnce(&mut JNIEnv) -> R,
     {
         unsafe {
             self.push_local_frame(capacity)?;
-            let res = f(self);
-            match res {
-                Ok(obj) => self.pop_local_frame(&obj),
-                Err(e) => {
-                    self.pop_local_frame(&JObject::null())?;
-                    Err(e)
+            let ret = f(self);
+            self.pop_local_frame(&JObject::null())?;
+            Ok(ret)
+        }
+    }
+
+    /// Executes the given function in a new local reference frame, in which at least a given number
+    /// of references can be created. Once this method returns, all references allocated
+    /// in the frame are freed.
+    ///
+    /// If a frame can't be allocated with the requested capacity for local
+    /// references, returns `Err` with a pending `OutOfMemoryError`.
+    ///
+    /// Since the low-level JNI interface has support for passing back a single local reference
+    /// from a local frame as special-case optimization, this alternative to `with_local_frame`
+    /// exposes that capability to return a local reference without needing to create a
+    /// temporary [`GlobalRef`].
+    pub fn with_local_frame_returning_local<F, E>(
+        &mut self,
+        capacity: i32,
+        f: F,
+    ) -> Result<std::result::Result<JObject<'local>, E>>
+    where
+        F: for<'new_local> FnOnce(
+            &mut JNIEnv<'new_local>,
+        ) -> std::result::Result<JObject<'new_local>, E>,
+    {
+        unsafe {
+            self.push_local_frame(capacity)?;
+            let result = match f(self) {
+                Ok(obj) => {
+                    let obj = self.pop_local_frame(&obj)?;
+                    Ok(obj)
                 }
-            }
+                Err(err) => {
+                    self.pop_local_frame(&JObject::null())?;
+                    Err(err)
+                }
+            };
+            Ok(result)
         }
     }
 
