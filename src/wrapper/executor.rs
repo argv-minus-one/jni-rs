@@ -68,14 +68,15 @@ impl Executor {
     /// call.
     ///
     /// Allocates a local frame with the specified capacity.
-    pub fn with_attached_capacity<F, R>(&self, capacity: i32, f: F) -> Result<R>
+    pub fn with_attached_capacity<F, T, E>(&self, capacity: i32, f: F) -> std::result::Result<T, E>
     where
-        F: FnOnce(&mut JNIEnv) -> Result<R>,
+        F: FnOnce(&mut JNIEnv) -> std::result::Result<T, E>,
+        E: From<Error>,
     {
         assert!(capacity > 0, "capacity should be a positive integer");
 
         let mut jni_env = self.vm.attach_current_thread_as_daemon()?;
-        jni_env.with_local_frame(capacity, |jni_env| f(jni_env))?
+        jni_env.with_local_frame(capacity, |jni_env| f(jni_env))
     }
 
     /// Executes a provided closure, making sure that the current thread

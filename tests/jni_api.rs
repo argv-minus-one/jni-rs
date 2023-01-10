@@ -225,7 +225,6 @@ pub fn with_local_frame() {
             Ok(res.into())
         })
         .unwrap()
-        .unwrap()
         .into();
 
     let s = env
@@ -242,7 +241,7 @@ pub fn with_local_frame_pending_exception() {
         .unwrap();
 
     // Try to allocate a frame of locals
-    env.with_local_frame(16, |_| {})
+    env.with_local_frame(16, |_| -> Result<_, Error> { Ok(()) })
         .expect("JNIEnv#with_local_frame must work in case of pending exception");
 
     env.exception_clear().unwrap();
@@ -971,7 +970,7 @@ fn short_lifetime_with_local_frame_sub_fn<'local>(
 ) -> Result<JObject<'local>, Error> {
     env.with_local_frame_returning_local(16, |env| {
         env.new_object(INTEGER_CLASS, "(I)V", &[JValue::from(5)])
-    })?
+    })
 }
 
 #[test]

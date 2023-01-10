@@ -350,7 +350,12 @@ mod tests {
         // Local frame size actually doesn't matter since JVM does not preallocate anything.
         const LOCAL_FRAME_SIZE: i32 = 32;
         let mut env = VM.attach_current_thread().unwrap();
-        b.iter(|| env.with_local_frame(LOCAL_FRAME_SIZE, |_| {}).unwrap());
+        b.iter(|| {
+            env.with_local_frame(LOCAL_FRAME_SIZE, |_| -> Result<_, jni::errors::Error> {
+                Ok(())
+            })
+            .unwrap()
+        });
     }
 
     /// A benchmark measuring Push/PopLocalFrame overhead while retuning a local reference
@@ -380,12 +385,11 @@ mod tests {
         let class = env.find_class(CLASS_OBJECT).unwrap();
         b.iter(|| {
             let global = env
-                .with_local_frame::<_, jni::errors::Result<GlobalRef>>(LOCAL_FRAME_SIZE, |env| {
+                .with_local_frame::<_, GlobalRef, jni::errors::Error>(LOCAL_FRAME_SIZE, |env| {
                     let local = env.new_object(&class, SIG_OBJECT_CTOR, &[])?;
                     let global = env.new_global_ref(local)?;
                     Ok(global)
                 })
-                .unwrap()
                 .unwrap();
             let _local = env.new_local_ref(global).unwrap();
         });

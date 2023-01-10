@@ -791,15 +791,16 @@ impl<'local> JNIEnv<'local> {
     /// Since local references created within this frame won't be accessible to the calling
     /// frame then if you need to pass an object back to the caller then you can do that via a
     /// [`GlobalRef`] / [`Self::make_global`].
-    pub fn with_local_frame<F, R>(&mut self, capacity: i32, f: F) -> Result<R>
+    pub fn with_local_frame<F, T, E>(&mut self, capacity: i32, f: F) -> std::result::Result<T, E>
     where
-        F: FnOnce(&mut JNIEnv) -> R,
+        F: FnOnce(&mut JNIEnv) -> std::result::Result<T, E>,
+        E: From<Error>,
     {
         unsafe {
             self.push_local_frame(capacity)?;
             let ret = f(self);
             self.pop_local_frame(&JObject::null())?;
-            Ok(ret)
+            ret
         }
     }
 
@@ -818,15 +819,16 @@ impl<'local> JNIEnv<'local> {
         &mut self,
         capacity: i32,
         f: F,
-    ) -> Result<std::result::Result<JObject<'local>, E>>
+    ) -> std::result::Result<JObject<'local>, E>
     where
         F: for<'new_local> FnOnce(
             &mut JNIEnv<'new_local>,
         ) -> std::result::Result<JObject<'new_local>, E>,
+        E: From<Error>,
     {
         unsafe {
             self.push_local_frame(capacity)?;
-            let result = match f(self) {
+            match f(self) {
                 Ok(obj) => {
                     let obj = self.pop_local_frame(&obj)?;
                     Ok(obj)
@@ -835,8 +837,7 @@ impl<'local> JNIEnv<'local> {
                     self.pop_local_frame(&JObject::null())?;
                     Err(err)
                 }
-            };
-            Ok(result)
+            }
         }
     }
 
